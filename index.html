@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Two is One — A Redundancy Strategy Game</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0b0e14;
+    --surface: #141820;
+    --surface2: #1a1f2b;
+    --border: #2a3040;
+    --text: #c8cdd8;
+    --text-dim: #6b7280;
+    --accent: #38bdf8;
+    --green: #34d399;
+    --red: #f87171;
+    --orange: #fbbf24;
+    --purple: #a78bfa;
+  }
+
+  body {
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .header .tagline {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .stat-value.budget { color: var(--orange); }
+  .stat-value.reputation { color: var(--green); }
+  .stat-value.day { color: var(--accent); }
+  .stat-value.score { color: var(--purple); }
+  .stat-value.reputation.critical { color: var(--red); }
+
+  /* Services grid */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .service-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .service-card.online { border-color: #1a4a3a; }
+  .service-card.offline {
+    border-color: var(--red);
+    box-shadow: 0 0 20px rgba(248, 113, 113, 0.15);
+    animation: pulse-red 1.5s ease-in-out;
+  }
+  @keyframes pulse-red {
+    0%, 100% { box-shadow: 0 0 20px rgba(248, 113, 113, 0.15); }
+    50% { box-shadow: 0 0 30px rgba(248, 113, 113, 0.3); }
+  }
+
+  .service-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .service-name {
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .service-status {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .service-status.online {
+    color: var(--green);
+    background: rgba(52, 211, 153, 0.1);
+  }
+  .service-status.offline {
+    color: var(--red);
+    background: rgba(248, 113, 113, 0.1);
+  }
+
+  .instance-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .instance-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 70px;
+  }
+  .instance-dots {
+    display: flex;
+    gap: 5px;
+    flex: 1;
+  }
+  .instance-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--green);
+    transition: background 0.3s, transform 0.3s;
+  }
+  .instance-dot.failed {
+    background: var(--red);
+    transform: scale(0.8);
+  }
+  .instance-dot.empty {
+    background: var(--surface2);
+    border: 1px dashed var(--border);
+  }
+
+  .service-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: inherit;
+    font-size: 12px;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .btn.diversify {
+    border-color: var(--purple);
+    color: var(--purple);
+    background: rgba(167, 139, 250, 0.08);
+  }
+  .btn.diversify:hover:not(:disabled) {
+    background: rgba(167, 139, 250, 0.15);
+  }
+  .btn.diversify.active {
+    background: rgba(167, 139, 250, 0.2);
+    border-color: var(--purple);
+  }
+  .service-meta {
+    display: flex;
+    gap: 14px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .meta-item { display: flex; align-items: center; gap: 4px; }
+  .meta-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .meta-dot.green { background: var(--green); }
+  .meta-dot.orange { background: var(--orange); }
+  .meta-dot.red { background: var(--red); }
+  .meta-dot.purple { background: var(--purple); }
+
+  /* Action bar */
+  .action-bar {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .btn-primary {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 12px 32px;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.2);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+  }
+  .btn-primary:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* Event log */
+  .log-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  .log-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .log-entries {
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .log-entries::-webkit-scrollbar { width: 6px; }
+  .log-entries::-webkit-scrollbar-track { background: var(--surface); }
+  .log-entries::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .log-entry { padding: 1px 0; }
+  .log-entry .day-marker { color: var(--accent); font-weight: 600; }
+  .log-entry .success { color: var(--green); }
+  .log-entry .failure { color: var(--red); }
+  .log-entry .warning { color: var(--orange); }
+  .log-entry .info { color: var(--text-dim); }
+  .log-entry .event { color: var(--purple); }
+
+  /* Info panel */
+  .info-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .info-panel h3 {
+    font-size: 14px;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .info-panel p {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    line-height: 1.6;
+  }
+  .info-panel code {
+    color: var(--orange);
+    font-size: 12px;
+  }
+  .info-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+  }
+  .info-block h4 {
+    font-size: 12px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .info-block p {
+    font-size: 11px;
+  }
+
+  /* Intro / Game Over screens */
+  .screen-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 14, 20, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .screen-overlay.hidden { display: none; }
+  .screen-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .screen-box h2 {
+    font-size: 24px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .screen-box p, .screen-box li {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 10px;
+  }
+  .screen-box ul {
+    list-style: none;
+    padding: 0;
+  }
+  .screen-box li::before {
+    content: "› ";
+    color: var(--accent);
+    font-weight: bold;
+  }
+  .screen-box .highlight {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .screen-box .btn-primary {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  /* Game over specifics */
+  .final-score {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--purple);
+    text-align: center;
+    margin: 16px 0;
+  }
+  .lesson {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    border-radius: 0 6px 6px 0;
+  }
+  .lesson .lesson-title {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .lesson .lesson-body {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* Random event banner */
+  .event-banner {
+    background: rgba(167, 139, 250, 0.1);
+    border: 1px solid var(--purple);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--purple);
+    display: none;
+  }
+  .event-banner.active { display: block; }
+  .event-banner.danger {
+    background: rgba(248, 113, 113, 0.1);
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .event-banner.good {
+    background: rgba(52, 211, 153, 0.1);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  /* Reliability meter on cards */
+  .reliability-bar {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  .reliability-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease, background 0.5s ease;
+  }
+
+  /* Tooltip */
+  .tip {
+    position: relative;
+    cursor: help;
+    border-bottom: 1px dotted var(--text-dim);
+  }
+  .tip:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .services-grid { grid-template-columns: 1fr; }
+    .stats-bar { gap: 8px; }
+    .stat { min-width: 80px; padding: 8px 12px; }
+    .stat-value { font-size: 18px; }
+    .container { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- INTRO SCREEN -->
+<div class="screen-overlay" id="intro-screen">
+  <div class="screen-box">
+    <h2>Two is One</h2>
+    <p style="text-align:center; color: var(--text); font-size: 15px; margin-bottom: 16px;">
+      A Redundancy Strategy Game
+    </p>
+    <p>
+      In security and operations, there's a saying:
+      <span class="highlight">"Two is one, and one is none."</span>
+      If you have only one of something critical, you effectively have zero &mdash;
+      because it <em>will</em> fail when you need it most.
+    </p>
+    <p>
+      But the saying doesn't tell you when to stop adding backups.
+      At what point does more redundancy create <em>more</em> risk?
+    </p>
+    <p style="color: var(--text); font-weight: 600;">How to play:</p>
+    <ul>
+      <li>You manage <span class="highlight">5 critical services</span> over <span class="highlight">30 days</span></li>
+      <li>Each day, spend your budget to <span class="highlight">add instances</span> (redundant copies) to services</li>
+      <li>You can also <span class="highlight">diversify</span> a service to reduce correlated failure risk</li>
+      <li>Click <span class="highlight">Run Day</span> to simulate &mdash; components fail randomly</li>
+      <li>A service goes <span style="color:var(--red)">OFFLINE</span> if all its instances fail at once</li>
+      <li>Keep your <span class="highlight">reputation</span> above zero to survive</li>
+    </ul>
+    <p style="color: var(--text); font-weight: 600;">Three types of failure:</p>
+    <ul>
+      <li><span style="color:var(--orange)">Independent</span> &mdash; each instance can fail on its own (20% per day). More instances = less risk.</li>
+      <li><span style="color:var(--red)">Correlated</span> &mdash; a common cause takes out ALL instances at once (5%). Diversifying reduces this.</li>
+      <li><span style="color:var(--purple)">Complexity</span> &mdash; too many instances (4+) creates management overhead that causes its own failures.</li>
+    </ul>
+    <p style="color:var(--text-dim); font-size: 11px; text-align: center; margin-top: 12px;">
+      Find the sweet spot. Pure redundancy has limits.
+    </p>
+    <button class="btn-primary" onclick="startGame()">Begin Simulation</button>
+  </div>
+</div>
+
+<!-- GAME OVER SCREEN -->
+<div class="screen-overlay hidden" id="gameover-screen">
+  <div class="screen-box">
+    <h2 id="gameover-title">Simulation Complete</h2>
+    <div class="final-score" id="final-score">0</div>
+    <p style="text-align:center; color: var(--text-dim);" id="final-summary"></p>
+    <div id="lessons-container" style="margin-top: 20px;"></div>
+    <button class="btn-primary" onclick="resetGame()">Run Again</button>
+  </div>
+</div>
+
+<!-- MAIN GAME -->
+<div class="container" id="game-container" style="display:none;">
+  <div class="header">
+    <h1>Two is One</h1>
+    <div class="tagline">Manage redundancy. Survive 30 days. Learn the limits.</div>
+  </div>
+
+  <div class="stats-bar" id="stats-bar"></div>
+
+  <div class="event-banner" id="event-banner"></div>
+
+  <div class="services-grid" id="services-grid"></div>
+
+  <div class="action-bar">
+    <button class="btn-primary" id="run-day-btn" onclick="runDay()">Run Day</button>
+  </div>
+
+  <div class="log-panel">
+    <div class="log-title">Event Log</div>
+    <div class="log-entries" id="log-entries"></div>
+  </div>
+
+  <div class="info-panel">
+    <h3>Reliability Reference</h3>
+    <div class="info-columns">
+      <div class="info-block">
+        <h4>Instance Count vs. Reliability</h4>
+        <p>1 instance: ~76% uptime/day</p>
+        <p>2 instances: ~91% uptime/day</p>
+        <p>3 instances: ~92% uptime/day</p>
+        <p>4 instances: ~88% uptime/day</p>
+        <p>5 instances: ~82% uptime/day</p>
+        <p style="color:var(--purple)">+ Diversified: ~3-4% bonus</p>
+      </div>
+      <div class="info-block">
+        <h4>Costs</h4>
+        <p>Add instance: <code>3 credits</code></p>
+        <p>Diversify service: <code>5 credits</code></p>
+        <p>Daily budget: <code>5 credits</code></p>
+        <p>Starting budget: <code>10 credits</code></p>
+      </div>
+      <div class="info-block">
+        <h4>Scoring</h4>
+        <p>Service online: <code>+10 pts/day</code></p>
+        <p>Service offline: <code>-15 reputation</code></p>
+        <p>Clean day: <code>+3 rep recovery</code></p>
+        <p>No-outage streak: <code>x multiplier</code></p>
+        <p>Game over: reputation = 0</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── GAME CONSTANTS ───
+const INDEPENDENT_FAIL_RATE = 0.20;
+const CORRELATED_FAIL_BASE = 0.05;
+const CORRELATED_FAIL_DIVERSIFIED = 0.015;
+const COMPLEXITY_RATES = { 1: 0, 2: 0, 3: 0.02, 4: 0.07, 5: 0.14, 6: 0.22 };
+const INSTANCE_COST = 3;
+const DIVERSIFY_COST = 5;
+const DAILY_BUDGET = 5;
+const UPTIME_POINTS = 10;
+const OUTAGE_PENALTY = 15;
+const CLEAN_DAY_RECOVERY = 3;
+const MAX_DAYS = 30;
+const MAX_INSTANCES = 6;
+const STARTING_REPUTATION = 100;
+
+// ─── RANDOM EVENTS ───
+const EVENTS = [
+  null, null, null, null, null,  // 50% chance of no event
+  { type: 'storm', label: 'Power Grid Instability', desc: 'Correlated failure rates doubled this day.', class: 'danger' },
+  { type: 'surge', label: 'Traffic Surge', desc: 'Independent failure rates increased to 30% this day.', class: 'danger' },
+  { type: 'bonus', label: 'Budget Surplus', desc: 'You receive 4 bonus credits today.', class: 'good' },
+  { type: 'audit', label: 'Security Audit', desc: 'Any single-instance service loses 10 reputation.', class: 'danger' },
+  { type: 'patch', label: 'Upstream Patch', desc: 'Independent failure rates reduced to 10% this day.', class: 'good' },
+];
+
+// ─── GAME STATE ───
+let state;
+
+function initState() {
+  return {
+    day: 1,
+    budget: 10,
+    reputation: STARTING_REPUTATION,
+    score: 0,
+    streak: 0,
+    services: [
+      { name: 'Database', instances: 1, diversified: false, lastStatus: 'online', failedInstances: [], outages: 0, outageTypes: { independent: 0, correlated: 0, complexity: 0 } },
+      { name: 'Auth Server', instances: 1, diversified: false, lastStatus: 'online', failedInstances: [], outages: 0, outageTypes: { independent: 0, correlated: 0, complexity: 0 } },
+      { name: 'API Gateway', instances: 1, diversified: false, lastStatus: 'online', failedInstances: [], outages: 0, outageTypes: { independent: 0, correlated: 0, complexity: 0 } },
+      { name: 'Storage', instances: 1, diversified: false, lastStatus: 'online', failedInstances: [], outages: 0, outageTypes: { independent: 0, correlated: 0, complexity: 0 } },
+      { name: 'Msg Queue', instances: 1, diversified: false, lastStatus: 'online', failedInstances: [], outages: 0, outageTypes: { independent: 0, correlated: 0, complexity: 0 } },
+    ],
+    log: [],
+    phase: 'planning',
+    gameOver: false,
+    currentEvent: null,
+    totalOutages: 0,
+    totalIndependent: 0,
+    totalCorrelated: 0,
+    totalComplexity: 0,
+    singleInstanceOutages: 0,
+    maxInstancesUsed: 1,
+    diversifyCount: 0,
+  };
+}
+
+// ─── GAME LOGIC ───
+
+function addInstance(idx) {
+  const svc = state.services[idx];
+  if (svc.instances >= MAX_INSTANCES || state.budget < INSTANCE_COST || state.phase !== 'planning') return;
+  svc.instances++;
+  state.budget -= INSTANCE_COST;
+  if (svc.instances > state.maxInstancesUsed) state.maxInstancesUsed = svc.instances;
+  render();
+}
+
+function removeInstance(idx) {
+  const svc = state.services[idx];
+  if (svc.instances <= 1 || state.phase !== 'planning') return;
+  svc.instances--;
+  state.budget += 2; // partial refund
+  render();
+}
+
+function diversify(idx) {
+  const svc = state.services[idx];
+  if (svc.diversified || state.budget < DIVERSIFY_COST || state.phase !== 'planning') return;
+  svc.diversified = true;
+  state.budget -= DIVERSIFY_COST;
+  state.diversifyCount++;
+  render();
+}
+
+function getComplexityRate(instances) {
+  if (instances <= 2) return 0;
+  return COMPLEXITY_RATES[Math.min(instances, 6)] || 0.22;
+}
+
+function calculateReliability(service, event) {
+  const n = service.instances;
+  const indepRate = event?.type === 'surge' ? 0.30 : event?.type === 'patch' ? 0.10 : INDEPENDENT_FAIL_RATE;
+  const corrBase = service.diversified ? CORRELATED_FAIL_DIVERSIFIED : CORRELATED_FAIL_BASE;
+  const corrRate = event?.type === 'storm' ? Math.min(corrBase * 2, 0.15) : corrBase;
+  const compRate = getComplexityRate(n);
+
+  const pAllIndepFail = Math.pow(indepRate, n);
+  const pUp = (1 - pAllIndepFail) * (1 - corrRate) * (1 - compRate);
+  return Math.max(0, Math.min(1, pUp));
+}
+
+function simulateService(service, event) {
+  const n = service.instances;
+  const indepRate = event?.type === 'surge' ? 0.30 : event?.type === 'patch' ? 0.10 : INDEPENDENT_FAIL_RATE;
+  const corrBase = service.diversified ? CORRELATED_FAIL_DIVERSIFIED : CORRELATED_FAIL_BASE;
+  const corrRate = event?.type === 'storm' ? Math.min(corrBase * 2, 0.15) : corrBase;
+  const compRate = getComplexityRate(n);
+
+  let failedInstances = [];
+  let outageReason = null;
+
+  // Check correlated failure first
+  if (Math.random() < corrRate) {
+    outageReason = 'correlated';
+    failedInstances = Array.from({ length: n }, (_, i) => i);
+  }
+  // Check complexity cascade
+  else if (Math.random() < compRate) {
+    outageReason = 'complexity';
+    failedInstances = Array.from({ length: n }, (_, i) => i);
+  }
+  // Check independent failures
+  else {
+    for (let i = 0; i < n; i++) {
+      if (Math.random() < indepRate) {
+        failedInstances.push(i);
+      }
+    }
+    if (failedInstances.length === n) {
+      outageReason = 'independent';
+    }
+  }
+
+  service.failedInstances = failedInstances;
+  const isDown = failedInstances.length === n;
+  service.lastStatus = isDown ? 'offline' : 'online';
+
+  if (isDown) {
+    service.outages++;
+    service.outageTypes[outageReason]++;
+  }
+
+  return { isDown, outageReason, failedInstances, failedCount: failedInstances.length };
+}
+
+function runDay() {
+  if (state.phase !== 'planning' || state.gameOver) return;
+  state.phase = 'simulating';
+
+  // Pick random event
+  const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+  state.currentEvent = event;
+
+  addLog(`<span class="day-marker">── Day ${state.day} ──</span>`);
+  if (event) {
+    addLog(`<span class="event">EVENT: ${event.label}</span> — ${event.desc}`);
+  }
+
+  // Handle audit event (penalty for single-instance services)
+  if (event?.type === 'audit') {
+    state.services.forEach(svc => {
+      if (svc.instances === 1) {
+        state.reputation -= 10;
+        addLog(`<span class="warning">AUDIT:</span> ${svc.name} flagged — single point of failure. <span class="failure">-10 reputation</span>`);
+      }
+    });
+  }
+
+  // Handle bonus budget
+  if (event?.type === 'bonus') {
+    state.budget += 4;
+  }
+
+  // Simulate each service
+  let dayOutages = 0;
+  state.services.forEach((svc, idx) => {
+    const result = simulateService(svc, event);
+    if (result.isDown) {
+      dayOutages++;
+      state.totalOutages++;
+      if (svc.instances === 1) state.singleInstanceOutages++;
+      if (result.outageReason === 'independent') state.totalIndependent++;
+      if (result.outageReason === 'correlated') state.totalCorrelated++;
+      if (result.outageReason === 'complexity') state.totalComplexity++;
+
+      state.reputation -= OUTAGE_PENALTY;
+
+      const reasonLabel = {
+        independent: '<span class="warning">all instances failed independently</span>',
+        correlated: '<span class="failure">correlated common-cause failure</span>',
+        complexity: '<span class="event">complexity cascade</span>',
+      }[result.outageReason];
+      addLog(`<span class="failure">OUTAGE:</span> ${svc.name} — ${reasonLabel} <span class="failure">(-${OUTAGE_PENALTY} rep)</span>`);
+    } else if (result.failedCount > 0) {
+      addLog(`<span class="warning">DEGRADED:</span> ${svc.name} — ${result.failedCount}/${svc.instances} instances failed, service survived`);
+    } else {
+      addLog(`<span class="success">OK:</span> ${svc.name} — all ${svc.instances} instances healthy`);
+    }
+  });
+
+  // Score calculation
+  const servicesUp = state.services.filter(s => s.lastStatus === 'online').length;
+  if (dayOutages === 0) {
+    state.streak++;
+  } else {
+    state.streak = 0;
+  }
+  const streakMultiplier = 1 + (state.streak * 0.1);
+  const dayScore = Math.round(servicesUp * UPTIME_POINTS * streakMultiplier);
+  state.score += dayScore;
+
+  // Reputation recovery on clean days
+  if (dayOutages === 0 && state.reputation < STARTING_REPUTATION) {
+    const recovery = Math.min(CLEAN_DAY_RECOVERY, STARTING_REPUTATION - state.reputation);
+    state.reputation += recovery;
+    addLog(`<span class="success">STABLE:</span> Clean day — <span class="success">+${recovery} reputation recovered</span>`);
+  }
+
+  if (state.streak > 1) {
+    addLog(`<span class="info">Streak bonus: x${streakMultiplier.toFixed(1)} multiplier (${state.streak} clean days)</span>`);
+  }
+  addLog(`<span class="info">Day score: +${dayScore} pts | ${servicesUp}/5 services online</span>`);
+
+  // Check game over
+  if (state.reputation <= 0) {
+    state.reputation = 0;
+    state.gameOver = true;
+    addLog(`<span class="failure">GAME OVER: Reputation depleted on day ${state.day}.</span>`);
+  } else if (state.day >= MAX_DAYS) {
+    state.gameOver = true;
+    addLog(`<span class="success">SIMULATION COMPLETE: Survived all 30 days!</span>`);
+  }
+
+  // Advance day
+  state.day++;
+  state.budget += DAILY_BUDGET;
+  state.phase = 'planning';
+
+  render();
+
+  if (state.gameOver) {
+    setTimeout(showGameOver, 1200);
+  }
+
+  // Scroll log to bottom
+  setTimeout(() => {
+    const logEl = document.getElementById('log-entries');
+    logEl.scrollTop = logEl.scrollHeight;
+  }, 50);
+}
+
+function addLog(html) {
+  state.log.push(html);
+}
+
+// ─── RENDERING ───
+
+function render() {
+  renderStats();
+  renderServices();
+  renderLog();
+  renderEvent();
+  document.getElementById('run-day-btn').disabled = state.gameOver;
+  document.getElementById('run-day-btn').textContent =
+    state.gameOver ? 'Simulation Ended' :
+    state.day === 1 && state.log.length === 0 ? 'Run Day 1' :
+    `Run Day ${state.day}`;
+}
+
+function renderStats() {
+  const repClass = state.reputation <= 25 ? 'reputation critical' : 'reputation';
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat"><div class="stat-label">Day</div><div class="stat-value day">${Math.min(state.day, MAX_DAYS)} / ${MAX_DAYS}</div></div>
+    <div class="stat"><div class="stat-label">Budget</div><div class="stat-value budget">${state.budget}</div></div>
+    <div class="stat"><div class="stat-label">Reputation</div><div class="stat-value ${repClass}">${state.reputation}</div></div>
+    <div class="stat"><div class="stat-label">Score</div><div class="stat-value score">${state.score}</div></div>
+    <div class="stat"><div class="stat-label">Streak</div><div class="stat-value" style="color: ${state.streak > 0 ? 'var(--green)' : 'var(--text-dim)'}">${state.streak}d</div></div>
+  `;
+}
+
+function renderServices() {
+  const grid = document.getElementById('services-grid');
+  grid.innerHTML = state.services.map((svc, idx) => {
+    const rel = calculateReliability(svc, null);
+    const relPct = (rel * 100).toFixed(1);
+    const relColor = rel > 0.93 ? 'var(--green)' : rel > 0.85 ? 'var(--orange)' : 'var(--red)';
+
+    const dots = [];
+    for (let i = 0; i < MAX_INSTANCES; i++) {
+      if (i < svc.instances) {
+        const failed = svc.failedInstances.includes(i);
+        dots.push(`<div class="instance-dot ${failed ? 'failed' : ''}"></div>`);
+      } else {
+        dots.push(`<div class="instance-dot empty"></div>`);
+      }
+    }
+
+    const compRate = getComplexityRate(svc.instances);
+    const compLabel = compRate > 0 ? `<span class="meta-item"><span class="meta-dot ${compRate > 0.05 ? 'red' : 'orange'}"></span>Complexity: ${(compRate * 100).toFixed(0)}%</span>` : '';
+
+    return `
+      <div class="service-card ${svc.lastStatus}">
+        <div class="service-header">
+          <span class="service-name">${svc.name}</span>
+          <span class="service-status ${svc.lastStatus}">${svc.lastStatus}</span>
+        </div>
+        <div class="instance-row">
+          <span class="instance-label">Instances</span>
+          <div class="instance-dots">${dots.join('')}</div>
+          <span style="font-size:13px; font-weight:600; min-width: 18px; text-align:center;">${svc.instances}</span>
+        </div>
+        <div class="service-controls">
+          <button class="btn" onclick="removeInstance(${idx})" ${svc.instances <= 1 || state.phase !== 'planning' ? 'disabled' : ''}>- Remove (↩2)</button>
+          <button class="btn" onclick="addInstance(${idx})" ${svc.instances >= MAX_INSTANCES || state.budget < INSTANCE_COST || state.phase !== 'planning' ? 'disabled' : ''}>+ Add (${INSTANCE_COST}¢)</button>
+          <button class="btn diversify ${svc.diversified ? 'active' : ''}" onclick="diversify(${idx})" ${svc.diversified || state.budget < DIVERSIFY_COST || state.phase !== 'planning' ? 'disabled' : ''}>${svc.diversified ? '✓ Diversified' : `Diversify (${DIVERSIFY_COST}¢)`}</button>
+        </div>
+        <div class="service-meta">
+          <span class="meta-item"><span class="meta-dot ${rel > 0.93 ? 'green' : rel > 0.85 ? 'orange' : 'red'}"></span>Reliability: ${relPct}%</span>
+          ${svc.diversified ? '<span class="meta-item"><span class="meta-dot purple"></span>Correlated: 1.5%</span>' : `<span class="meta-item"><span class="meta-dot orange"></span>Correlated: 5%</span>`}
+          ${compLabel}
+        </div>
+        <div class="reliability-bar">
+          <div class="reliability-fill" style="width: ${relPct}%; background: ${relColor};"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderLog() {
+  const el = document.getElementById('log-entries');
+  el.innerHTML = state.log.map(l => `<div class="log-entry">${l}</div>`).join('');
+}
+
+function renderEvent() {
+  const banner = document.getElementById('event-banner');
+  if (state.currentEvent && state.log.length > 0) {
+    banner.className = `event-banner active ${state.currentEvent.class}`;
+    banner.textContent = `${state.currentEvent.label}: ${state.currentEvent.desc}`;
+  } else {
+    banner.className = 'event-banner';
+  }
+}
+
+// ─── GAME OVER ───
+
+function showGameOver() {
+  const screen = document.getElementById('gameover-screen');
+  screen.classList.remove('hidden');
+
+  const survived = state.day - 1;
+  document.getElementById('gameover-title').textContent =
+    survived >= MAX_DAYS ? 'Simulation Complete' : 'Reputation Depleted';
+  document.getElementById('final-score').textContent = state.score;
+  document.getElementById('final-summary').textContent =
+    `Survived ${survived} day${survived !== 1 ? 's' : ''} with ${state.totalOutages} total outage${state.totalOutages !== 1 ? 's' : ''}.`;
+
+  // Build lessons
+  const lessons = [];
+
+  if (state.singleInstanceOutages > 0) {
+    lessons.push({
+      title: `"One is None" — ${state.singleInstanceOutages} outage${state.singleInstanceOutages > 1 ? 's' : ''} from single-instance services`,
+      body: 'A single point of failure will eventually fail. If you have one of something critical, you effectively have none. Always maintain at least two independent copies of critical components.'
+    });
+  }
+
+  if (state.totalCorrelated > 0) {
+    lessons.push({
+      title: `Common-Cause Failure — ${state.totalCorrelated} correlated outage${state.totalCorrelated > 1 ? 's' : ''}`,
+      body: 'Redundancy alone isn\'t enough. If all copies share the same dependencies (power, network, software version), a single event can take them all out. Invest in independence and diversity.'
+    });
+  }
+
+  if (state.totalComplexity > 0) {
+    lessons.push({
+      title: `Complexity Kills — ${state.totalComplexity} complexity cascade${state.totalComplexity > 1 ? 's' : ''}`,
+      body: 'More isn\'t always better. Each additional component adds management overhead, configuration drift risk, and new failure modes. There\'s an optimal point beyond which redundancy backfires.'
+    });
+  }
+
+  if (state.totalOutages === 0) {
+    lessons.push({
+      title: 'Perfect Uptime — Zero outages!',
+      body: 'You found the balance between redundancy, diversity, and simplicity. In practice, this balance depends on the specific system, but the principle holds: enough redundancy to survive failures, with enough independence to avoid common-cause events, without so much complexity that it becomes its own failure mode.'
+    });
+  }
+
+  const maxInst = state.maxInstancesUsed;
+  if (maxInst >= 4 && state.totalComplexity === 0) {
+    lessons.push({
+      title: 'Lucky Complexity — You ran 4+ instances and got away with it',
+      body: 'You added 4+ instances to some services without suffering a complexity cascade. That was luck — the risk was real. In production, high-instance-count clusters require sophisticated orchestration that itself becomes a failure vector.'
+    });
+  }
+
+  if (state.diversifyCount === 0 && state.totalCorrelated > 0) {
+    lessons.push({
+      title: 'Undiversified — You never invested in diversity',
+      body: 'You relied on raw instance count without reducing correlated failure risk. Diversity (different vendors, datacenters, implementations) is often more valuable than additional identical copies.'
+    });
+  }
+
+  if (lessons.length === 0) {
+    lessons.push({
+      title: 'The Redundancy Principle',
+      body: 'Two is one, and one is none. But three can be two, and four can be a liability. The goal is not maximum redundancy — it\'s optimal resilience.'
+    });
+  }
+
+  // Always add the summary lesson
+  lessons.push({
+    title: 'The Takeaway',
+    body: 'Reliability comes from the right amount of redundancy, combined with independence (to prevent correlated failures) and simplicity (to prevent complexity cascades). The sweet spot is usually 2-3 diversified instances — not 1, and not 5.'
+  });
+
+  document.getElementById('lessons-container').innerHTML =
+    lessons.map(l => `<div class="lesson"><div class="lesson-title">${l.title}</div><div class="lesson-body">${l.body}</div></div>`).join('');
+}
+
+// ─── GAME LIFECYCLE ───
+
+function startGame() {
+  state = initState();
+  document.getElementById('intro-screen').classList.add('hidden');
+  document.getElementById('game-container').style.display = 'block';
+  render();
+}
+
+function resetGame() {
+  state = initState();
+  document.getElementById('gameover-screen').classList.add('hidden');
+  render();
+}
+</script>
+
+</body>
+</html>
