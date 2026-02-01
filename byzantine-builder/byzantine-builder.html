@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Byzantine Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e14;
+            --bg-secondary: #131922;
+            --bg-tertiary: #1a2332;
+            --border-color: #2a3a4a;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --green-bright: #00ff88;
+            --green-dim: #00aa5c;
+            --green-glow: rgba(0, 255, 136, 0.3);
+            --red-bright: #ff4757;
+            --red-dim: #aa2233;
+            --red-glow: rgba(255, 71, 87, 0.3);
+            --yellow-bright: #ffd93d;
+            --blue-accent: #0088ff;
+            --blue-glow: rgba(0, 136, 255, 0.3);
+            --purple-accent: #a855f7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--green-bright), transparent);
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, var(--green-bright), var(--blue-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+        }
+
+        /* Main Layout */
+        .game-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr 280px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-title::before {
+            content: '▸';
+            color: var(--green-bright);
+        }
+
+        /* Component Palette */
+        .component-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .component-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .component-btn:hover {
+            border-color: var(--green-dim);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .component-btn.selected {
+            border-color: var(--green-bright);
+            box-shadow: 0 0 12px var(--green-glow);
+        }
+
+        .component-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .component-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .component-info {
+            flex: 1;
+        }
+
+        .component-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 2px;
+        }
+
+        .component-cost {
+            font-size: 0.7rem;
+            color: var(--yellow-bright);
+        }
+
+        /* Budget Display */
+        .budget-display {
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .budget-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .budget-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--yellow-bright);
+        }
+
+        .budget-value.low {
+            color: var(--red-bright);
+        }
+
+        /* Canvas Area */
+        .canvas-container {
+            position: relative;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 700px;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 700px;
+            cursor: crosshair;
+        }
+
+        .canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            background: 
+                linear-gradient(90deg, rgba(0, 255, 136, 0.02) 1px, transparent 1px),
+                linear-gradient(rgba(0, 255, 136, 0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* Level Info Panel */
+        .level-info {
+            margin-bottom: 16px;
+            padding: 16px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            border-left: 3px solid var(--blue-accent);
+        }
+
+        .level-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            color: var(--blue-accent);
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+
+        .level-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .level-objective {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .level-target {
+            margin-top: 12px;
+            padding: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .target-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .target-value {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--green-bright);
+        }
+
+        /* Stats Panel */
+        .stats-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .stat-item {
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .stat-value.success {
+            color: var(--green-bright);
+        }
+
+        .stat-value.failure {
+            color: var(--red-bright);
+        }
+
+        .stat-value.neutral {
+            color: var(--text-primary);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-top: 8px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green-bright), var(--blue-accent));
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.failing {
+            background: linear-gradient(90deg, var(--red-bright), var(--red-dim));
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--green-bright), var(--green-dim));
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px var(--green-glow);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--red-bright);
+            border: 1px solid var(--red-dim);
+        }
+
+        .btn-danger:hover {
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        /* Simulation Display */
+        .sim-display {
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .sim-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .sim-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .sim-indicator.running {
+            background: var(--green-bright);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Signal visualization */
+        .signal-trace {
+            height: 40px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .signal-bar {
+            position: absolute;
+            bottom: 0;
+            width: 2px;
+            transition: height 0.1s ease;
+        }
+
+        .signal-bar.success {
+            background: var(--green-bright);
+        }
+
+        .signal-bar.failure {
+            background: var(--red-bright);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            padding: 8px 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            pointer-events: none;
+            z-index: 100;
+            max-width: 200px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 500px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.visible .modal {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+
+        .modal-title.success {
+            color: var(--green-bright);
+        }
+
+        .modal-message {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .modal-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+
+        .modal-stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--green-bright);
+        }
+
+        .modal-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Instructions Panel */
+        .instructions {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            margin-top: 16px;
+        }
+
+        .instructions kbd {
+            padding: 2px 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            font-size: 0.7rem;
+        }
+
+        /* Hint Panel */
+        .hint-panel {
+            margin-top: 16px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(255, 217, 61, 0.1), rgba(255, 217, 61, 0.05));
+            border: 1px solid var(--yellow-bright);
+            border-radius: 8px;
+        }
+
+        .hint-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            color: var(--yellow-bright);
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .hint-text {
+            font-size: 0.75rem;
+            color: var(--text-primary);
+            line-height: 1.7;
+            white-space: pre-wrap;
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .game-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            #gameCanvas {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>BYZANTINE BUILDER</h1>
+            <div class="subtitle">N-MODULAR REDUNDANCY SIMULATOR</div>
+        </header>
+
+        <div class="game-layout">
+            <!-- Left Panel: Components -->
+            <div class="panel">
+                <div class="panel-title">COMPONENTS</div>
+                <div class="component-list" id="componentList">
+                    <!-- Populated by JS -->
+                </div>
+                
+                <div class="budget-display">
+                    <div class="budget-label">BUDGET REMAINING</div>
+                    <div class="budget-value" id="budgetDisplay">100</div>
+                </div>
+
+                <div class="instructions">
+                    <strong>How to build:</strong><br>
+                    1. Click a component above<br>
+                    2. Click on the grid to place it<br>
+                    3. Click a placed node, then click another to connect them<br>
+                    4. Connect SOURCE → your circuit → TARGET<br><br>
+                    <strong>Tips:</strong><br>
+                    • Splitter: 1 in → 3 out (for parallel paths)<br>
+                    • Voter: 3 in → 1 out (picks majority)<br>
+                    • <kbd>Del</kbd> or right-click to remove
+                </div>
+            </div>
+
+            <!-- Center: Canvas -->
+            <div class="canvas-container">
+                <canvas id="gameCanvas"></canvas>
+                <div class="canvas-overlay"></div>
+            </div>
+
+            <!-- Right Panel: Level & Stats -->
+            <div class="panel">
+                <div class="panel-title">MISSION BRIEFING</div>
+                
+                <div class="level-info">
+                    <div class="level-number" id="levelNumber">LEVEL 01</div>
+                    <div class="level-title" id="levelTitle">Single Point of Failure</div>
+                    <div class="level-objective" id="levelObjective">
+                        Your signal must pass through unreliable nodes. Design a topology that achieves the target reliability.
+                    </div>
+                    <div class="level-target">
+                        <span class="target-label">Target Error Rate</span>
+                        <span class="target-value" id="targetError">&lt; 1.0%</span>
+                    </div>
+                </div>
+
+                <div class="panel-title">TELEMETRY</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">SIGNALS TRANSMITTED</div>
+                        <div class="stat-value neutral" id="signalCount">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">SUCCESSFUL</div>
+                        <div class="stat-value success" id="successCount">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">CORRUPTED</div>
+                        <div class="stat-value failure" id="failureCount">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">ERROR RATE</div>
+                        <div class="stat-value" id="errorRate">--%</div>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="errorProgress"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sim-display">
+                    <div class="sim-status">
+                        <div class="sim-indicator" id="simIndicator"></div>
+                        <span id="simStatus">Ready to simulate</span>
+                    </div>
+                    <div class="signal-trace" id="signalTrace"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="runSimBtn">▶ RUN SIMULATION</button>
+                    <button class="btn btn-secondary" id="hintBtn">💡 SHOW HINT</button>
+                    <button class="btn btn-secondary" id="clearBtn">⟲ CLEAR CIRCUIT</button>
+                    <button class="btn btn-secondary" id="nextLevelBtn" style="display: none;">NEXT LEVEL →</button>
+                </div>
+
+                <div class="hint-panel" id="hintPanel" style="display: none;">
+                    <div class="hint-title">SOLUTION HINT</div>
+                    <pre class="hint-text" id="hintText"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div class="modal-overlay" id="victoryModal">
+        <div class="modal">
+            <div class="modal-icon">🎯</div>
+            <div class="modal-title success" id="modalTitle">TARGET ACHIEVED</div>
+            <div class="modal-message" id="modalMessage">
+                Your redundant architecture achieved the required reliability!
+            </div>
+            <div class="modal-stats">
+                <div>
+                    <div class="modal-stat-value" id="modalErrorRate">0.8%</div>
+                    <div class="modal-stat-label">Error Rate</div>
+                </div>
+                <div>
+                    <div class="modal-stat-value" id="modalBudget">45</div>
+                    <div class="modal-stat-label">Budget Used</div>
+                </div>
+                <div>
+                    <div class="modal-stat-value" id="modalNodes">5</div>
+                    <div class="modal-stat-label">Components</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="modalNextBtn">PROCEED TO NEXT LEVEL</button>
+            <button class="btn btn-secondary" id="modalCloseBtn" style="margin-top: 8px;">CONTINUE TESTING</button>
+        </div>
+    </div>
+
+    <script>
+        // ============== GAME STATE ==============
+        const GameState = {
+            currentLevel: 0,
+            budget: 100,
+            selectedComponent: null,
+            selectedNode: null,
+            nodes: [],
+            connections: [],
+            isSimulating: false,
+            simResults: { total: 0, success: 0, failure: 0 },
+            levelCompleted: false
+        };
+
+        // ============== LEVEL DEFINITIONS ==============
+        const LEVELS = [
+            {
+                id: 1,
+                title: "Triple Modular Redundancy",
+                objective: "One node has 10% failure. But if you split into THREE paths and VOTE on the majority, you only fail when 2+ nodes fail simultaneously. That's much rarer! Build it.",
+                targetError: 5.0,
+                budget: 150,
+                nodeFailureRate: 0.10,
+                availableComponents: ['node', 'splitter', 'voter'],
+                hint: "TMR",
+                hintDescription: "SOURCE → Splitter → 3 Nodes (parallel) → Voter → TARGET\n\nThe Splitter duplicates your signal into 3 paths.\nEach path goes through its own Node (10% fail each).\nThe Voter outputs whatever 2+ inputs agree on.\n\nMath: Only fails if 2+ nodes fail = C(3,2)×0.1²×0.9 + C(3,3)×0.1³ ≈ 2.8%"
+            },
+            {
+                id: 2,
+                title: "Tighter Tolerance",
+                objective: "Same architecture, but now we need <1% error. One layer of TMR won't cut it. Can you add MORE redundancy?",
+                targetError: 1.0,
+                budget: 250,
+                nodeFailureRate: 0.10,
+                availableComponents: ['node', 'splitter', 'voter'],
+                hint: "NESTED",
+                hintDescription: "Try TMR where each 'node' is ITSELF a TMR unit.\n\nOr: Use multiple voting stages.\n\nThe key insight: if TMR gives you 2.8% error, then doing TMR on TMR units gives you much lower error rates."
+            },
+            {
+                id: 3,
+                title: "Budget Constraints",
+                objective: "Target is relaxed to <3%, but budget is tight. Find the MINIMAL architecture that works.",
+                targetError: 3.0,
+                budget: 70,
+                nodeFailureRate: 0.10,
+                availableComponents: ['node', 'splitter', 'voter'],
+                hint: "MINIMAL",
+                hintDescription: "Basic TMR: 1 splitter (10) + 3 nodes (45) + 1 voter (10) = 65 cost.\n\nThis gives ~2.8% error, which beats the 3% target!\n\nThe lesson: know your math, build exactly what you need."
+            },
+            {
+                id: 4,
+                title: "Higher Failure Rates",
+                objective: "Nodes now fail 20% of the time. Simple TMR gives ~10% error. You need deeper redundancy.",
+                targetError: 5.0,
+                budget: 200,
+                nodeFailureRate: 0.20,
+                availableComponents: ['node', 'splitter', 'voter'],
+                hint: "DEEP",
+                hintDescription: "With 20% failure:\n- 1 node = 20% error\n- Simple TMR = 3×(0.2²)×0.8 + 0.2³ = 10.4% error\n\nYou need wider redundancy (5 paths) or nested TMR.\n\nThe math: More parallel paths = exponentially lower failure probability."
+            },
+            {
+                id: 5,
+                title: "Consistent Failures",
+                objective: "Orange 'Fail Nodes' ALWAYS corrupt (100% failure). But they're cheap! Can you use predictable failure to your advantage?",
+                targetError: 3.0,
+                budget: 100,
+                nodeFailureRate: 0.10,
+                availableComponents: ['node', 'splitter', 'voter', 'failnode'],
+                hint: "INVERT",
+                hintDescription: "A Fail Node always flips the signal. Two Fail Nodes in series = flip twice = back to original!\n\nOr: Use 2 honest nodes + 1 fail node in a voter. The fail node always votes wrong, but 2 honest nodes (each 10% fail) means you only fail if BOTH honest nodes fail = 1%!"
+            },
+            {
+                id: 6,
+                title: "Byzantine Generals",
+                objective: "Purple Byzantine nodes can LIE DIFFERENTLY to each output. They might tell one voter 'green' and another 'red' simultaneously. Classic TMR can be fooled!",
+                targetError: 3.0,
+                budget: 250,
+                nodeFailureRate: 0.05,
+                availableComponents: ['node', 'splitter', 'voter', 'byzantine'],
+                hint: "BFT",
+                hintDescription: "To tolerate f Byzantine faults, you need 3f+1 total nodes.\n\nWith 1 Byzantine node, you need 4+ honest paths.\n\nThe Byzantine node can split its lies - so you need enough honest nodes to outvote it in every scenario."
+            }
+        ];
+
+        // ============== COMPONENT DEFINITIONS ==============
+        const COMPONENTS = {
+            source: { name: 'Source', cost: 0, icon: '◀', color: '#00ff88', description: 'Signal origin (fixed)' },
+            target: { name: 'Target', cost: 0, icon: '▶', color: '#0088ff', description: 'Signal destination (fixed)' },
+            node: { name: 'Node', cost: 15, icon: '◆', color: '#ffd93d', description: 'May corrupt signal' },
+            splitter: { name: 'Splitter', cost: 10, icon: '⋔', color: '#00ff88', description: '1 input → 3 outputs' },
+            voter: { name: 'Voter', cost: 10, icon: '⊕', color: '#0088ff', description: '3 inputs → majority output' },
+            failnode: { name: 'Fail Node', cost: 5, icon: '◆', color: '#ff8c00', description: 'ALWAYS corrupts' },
+            byzantine: { name: 'Byzantine', cost: 20, icon: '◈', color: '#a855f7', description: 'Lies differently to each output' }
+        };
+
+        // ============== CANVAS SETUP ==============
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let canvasWidth, canvasHeight;
+        const GRID_SIZE = 60;
+        let gridCols, gridRows;
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            canvasWidth = canvas.width;
+            canvasHeight = canvas.height;
+            gridCols = Math.floor(canvasWidth / GRID_SIZE);
+            gridRows = Math.floor(canvasHeight / GRID_SIZE);
+            render();
+        }
+
+        // ============== NODE CLASS ==============
+        class Node {
+            constructor(type, gridX, gridY) {
+                this.id = Date.now() + Math.random();
+                this.type = type;
+                this.gridX = gridX;
+                this.gridY = gridY;
+                this.x = gridX * GRID_SIZE + GRID_SIZE / 2;
+                this.y = gridY * GRID_SIZE + GRID_SIZE / 2;
+                this.inputs = [];
+                this.outputs = [];
+                this.failureRate = LEVELS[GameState.currentLevel].nodeFailureRate;
+                this.currentSignal = null;
+                this.byzantineOutputs = {}; // For Byzantine nodes: different outputs per connection
+            }
+
+            get config() {
+                return COMPONENTS[this.type];
+            }
+        }
+
+        // ============== INITIALIZATION ==============
+        function initLevel(levelIndex) {
+            GameState.currentLevel = levelIndex;
+            const level = LEVELS[levelIndex];
+            
+            GameState.budget = level.budget;
+            GameState.nodes = [];
+            GameState.connections = [];
+            GameState.selectedComponent = null;
+            GameState.selectedNode = null;
+            GameState.isSimulating = false;
+            GameState.simResults = { total: 0, success: 0, failure: 0 };
+            GameState.levelCompleted = false;
+
+            // Hide hint panel
+            document.getElementById('hintPanel').style.display = 'none';
+
+            // Create fixed source and target
+            const source = new Node('source', 0, Math.floor(gridRows / 2));
+            const target = new Node('target', gridCols - 1, Math.floor(gridRows / 2));
+            GameState.nodes.push(source, target);
+
+            updateUI();
+            render();
+        }
+
+        function updateUI() {
+            const level = LEVELS[GameState.currentLevel];
+            
+            // Level info
+            document.getElementById('levelNumber').textContent = `LEVEL ${String(level.id).padStart(2, '0')}`;
+            document.getElementById('levelTitle').textContent = level.title;
+            document.getElementById('levelObjective').textContent = level.objective;
+            document.getElementById('targetError').textContent = `< ${level.targetError.toFixed(1)}%`;
+
+            // Budget
+            const budgetEl = document.getElementById('budgetDisplay');
+            budgetEl.textContent = GameState.budget;
+            budgetEl.classList.toggle('low', GameState.budget < 20);
+
+            // Component list
+            const componentList = document.getElementById('componentList');
+            componentList.innerHTML = '';
+            
+            level.availableComponents.forEach(compType => {
+                const comp = COMPONENTS[compType];
+                const btn = document.createElement('button');
+                btn.className = 'component-btn';
+                if (GameState.selectedComponent === compType) btn.classList.add('selected');
+                if (comp.cost > GameState.budget) btn.classList.add('disabled');
+                
+                btn.innerHTML = `
+                    <div class="component-icon" style="color: ${comp.color}">${comp.icon}</div>
+                    <div class="component-info">
+                        <div class="component-name">${comp.name}</div>
+                        <div class="component-cost">◈ ${comp.cost}</div>
+                    </div>
+                `;
+                
+                btn.onclick = () => {
+                    if (comp.cost <= GameState.budget) {
+                        GameState.selectedComponent = compType;
+                        GameState.selectedNode = null;
+                        updateUI();
+                    }
+                };
+                
+                componentList.appendChild(btn);
+            });
+
+            // Stats
+            const { total, success, failure } = GameState.simResults;
+            document.getElementById('signalCount').textContent = total.toLocaleString();
+            document.getElementById('successCount').textContent = success.toLocaleString();
+            document.getElementById('failureCount').textContent = failure.toLocaleString();
+            
+            const errorRate = total > 0 ? (failure / total * 100) : 0;
+            const errorRateEl = document.getElementById('errorRate');
+            errorRateEl.textContent = total > 0 ? `${errorRate.toFixed(2)}%` : '--%';
+            errorRateEl.className = 'stat-value ' + (total === 0 ? '' : errorRate <= level.targetError ? 'success' : 'failure');
+
+            const progressEl = document.getElementById('errorProgress');
+            progressEl.style.width = `${Math.min(100, (1 - errorRate / 10) * 100)}%`;
+            progressEl.classList.toggle('failing', errorRate > level.targetError);
+
+            // Next level button
+            document.getElementById('nextLevelBtn').style.display = GameState.levelCompleted ? 'block' : 'none';
+        }
+
+        // ============== RENDERING ==============
+        function render() {
+            ctx.fillStyle = '#131922';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(42, 58, 74, 0.5)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= canvasWidth; x += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvasHeight);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= canvasHeight; y += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvasWidth, y);
+                ctx.stroke();
+            }
+
+            // Draw connections
+            GameState.connections.forEach(conn => {
+                drawConnection(conn.from, conn.to, conn.signal);
+            });
+
+            // Draw nodes
+            GameState.nodes.forEach(node => {
+                drawNode(node);
+            });
+
+            // Draw selection highlight
+            if (GameState.selectedNode) {
+                ctx.strokeStyle = '#00ff88';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(GameState.selectedNode.x, GameState.selectedNode.y, 28, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        function drawNode(node) {
+            const config = node.config;
+            const x = node.x;
+            const y = node.y;
+            const size = 22;
+
+            // Glow effect
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * 1.5);
+            gradient.addColorStop(0, config.color + '40');
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x - size * 1.5, y - size * 1.5, size * 3, size * 3);
+
+            // Node body
+            ctx.fillStyle = '#1a2332';
+            ctx.strokeStyle = config.color;
+            ctx.lineWidth = 2;
+            
+            if (node.type === 'voter') {
+                // Hexagon for voter
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i * 60 - 30) * Math.PI / 180;
+                    const px = x + size * Math.cos(angle);
+                    const py = y + size * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+            } else if (node.type === 'splitter') {
+                // Triangle for splitter
+                ctx.beginPath();
+                ctx.moveTo(x - size, y + size * 0.7);
+                ctx.lineTo(x + size, y);
+                ctx.lineTo(x - size, y - size * 0.7);
+                ctx.closePath();
+            } else {
+                // Circle for others
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+            }
+            
+            ctx.fill();
+            ctx.stroke();
+
+            // Icon
+            ctx.fillStyle = config.color;
+            ctx.font = 'bold 16px JetBrains Mono';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(config.icon, x, y);
+
+            // Failure rate label for nodes
+            if (['node', 'failnode', 'byzantine'].includes(node.type)) {
+                ctx.fillStyle = config.color;
+                ctx.font = '10px JetBrains Mono';
+                const label = node.type === 'failnode' ? '100%' : 
+                             node.type === 'byzantine' ? 'BYZ' :
+                             `${(node.failureRate * 100).toFixed(0)}%`;
+                ctx.fillText(label, x, y + size + 12);
+            }
+
+            // Signal indicator during simulation
+            if (node.currentSignal !== null) {
+                ctx.fillStyle = node.currentSignal ? '#00ff88' : '#ff4757';
+                ctx.beginPath();
+                ctx.arc(x + size - 5, y - size + 5, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawConnection(fromNode, toNode, signal = null) {
+            const dx = toNode.x - fromNode.x;
+            const dy = toNode.y - fromNode.y;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            
+            // Offset from node centers
+            const offset = 25;
+            const x1 = fromNode.x + (dx / len) * offset;
+            const y1 = fromNode.y + (dy / len) * offset;
+            const x2 = toNode.x - (dx / len) * offset;
+            const y2 = toNode.y - (dy / len) * offset;
+
+            // Line
+            ctx.strokeStyle = signal === null ? '#2a3a4a' : signal ? '#00ff88' : '#ff4757';
+            ctx.lineWidth = signal === null ? 2 : 3;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+
+            // Arrow
+            const arrowSize = 8;
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - arrowSize * Math.cos(angle - 0.4), y2 - arrowSize * Math.sin(angle - 0.4));
+            ctx.lineTo(x2 - arrowSize * Math.cos(angle + 0.4), y2 - arrowSize * Math.sin(angle + 0.4));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // ============== INTERACTION ==============
+        canvas.addEventListener('click', (e) => {
+            if (GameState.isSimulating) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const gridX = Math.floor(x / GRID_SIZE);
+            const gridY = Math.floor(y / GRID_SIZE);
+
+            // Check if clicked on existing node
+            const clickedNode = GameState.nodes.find(n => 
+                Math.abs(n.x - x) < 25 && Math.abs(n.y - y) < 25
+            );
+
+            if (clickedNode) {
+                // If we have a selected node, try to connect
+                if (GameState.selectedNode && GameState.selectedNode !== clickedNode) {
+                    createConnection(GameState.selectedNode, clickedNode);
+                    GameState.selectedNode = null;
+                } else {
+                    // Select this node
+                    GameState.selectedNode = clickedNode;
+                    GameState.selectedComponent = null;
+                }
+            } else if (GameState.selectedComponent) {
+                // Place new component
+                placeComponent(GameState.selectedComponent, gridX, gridY);
+            } else {
+                GameState.selectedNode = null;
+            }
+
+            updateUI();
+            render();
+        });
+
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (GameState.isSimulating) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Find and remove node
+            const nodeIndex = GameState.nodes.findIndex(n => 
+                Math.abs(n.x - x) < 25 && Math.abs(n.y - y) < 25 &&
+                n.type !== 'source' && n.type !== 'target'
+            );
+
+            if (nodeIndex !== -1) {
+                const node = GameState.nodes[nodeIndex];
+                // Refund cost
+                GameState.budget += COMPONENTS[node.type].cost;
+                // Remove connections
+                GameState.connections = GameState.connections.filter(c => 
+                    c.from !== node && c.to !== node
+                );
+                // Remove node
+                GameState.nodes.splice(nodeIndex, 1);
+                GameState.selectedNode = null;
+                updateUI();
+                render();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (GameState.selectedNode && 
+                    GameState.selectedNode.type !== 'source' && 
+                    GameState.selectedNode.type !== 'target') {
+                    // Refund
+                    GameState.budget += COMPONENTS[GameState.selectedNode.type].cost;
+                    // Remove connections
+                    GameState.connections = GameState.connections.filter(c => 
+                        c.from !== GameState.selectedNode && c.to !== GameState.selectedNode
+                    );
+                    // Remove node
+                    GameState.nodes = GameState.nodes.filter(n => n !== GameState.selectedNode);
+                    GameState.selectedNode = null;
+                    updateUI();
+                    render();
+                }
+            }
+            if (e.key === 'Escape') {
+                GameState.selectedNode = null;
+                GameState.selectedComponent = null;
+                updateUI();
+                render();
+            }
+        });
+
+        function placeComponent(type, gridX, gridY) {
+            // Check if position is valid
+            if (gridX <= 0 || gridX >= gridCols - 1) return; // Can't place on source/target columns
+            if (GameState.nodes.some(n => n.gridX === gridX && n.gridY === gridY)) return;
+
+            const cost = COMPONENTS[type].cost;
+            if (cost > GameState.budget) return;
+
+            const node = new Node(type, gridX, gridY);
+            GameState.nodes.push(node);
+            GameState.budget -= cost;
+            GameState.selectedComponent = null;
+        }
+
+        function createConnection(from, to) {
+            // Validate connection
+            if (from === to) return;
+            if (GameState.connections.some(c => c.from === from && c.to === to)) return;
+            
+            // Can't connect TO source or FROM target
+            if (to.type === 'source' || from.type === 'target') return;
+
+            // Splitters can have 1 input, 3 outputs
+            if (from.type === 'splitter') {
+                const existingOutputs = GameState.connections.filter(c => c.from === from).length;
+                if (existingOutputs >= 3) return;
+            }
+
+            // Voters need exactly 3 inputs
+            if (to.type === 'voter') {
+                const existingInputs = GameState.connections.filter(c => c.to === to).length;
+                if (existingInputs >= 3) return;
+            }
+
+            GameState.connections.push({ from, to, signal: null });
+        }
+
+        // ============== SIMULATION ==============
+        async function runSimulation() {
+            if (GameState.isSimulating) return;
+
+            // Validate topology
+            const source = GameState.nodes.find(n => n.type === 'source');
+            const target = GameState.nodes.find(n => n.type === 'target');
+            
+            if (!hasPath(source, target)) {
+                alert('No path from Source to Target! Connect your circuit.');
+                return;
+            }
+
+            GameState.isSimulating = true;
+            GameState.simResults = { total: 0, success: 0, failure: 0 };
+            
+            document.getElementById('simIndicator').classList.add('running');
+            document.getElementById('simStatus').textContent = 'Simulating...';
+            document.getElementById('runSimBtn').disabled = true;
+
+            const signalTrace = document.getElementById('signalTrace');
+            signalTrace.innerHTML = '';
+
+            const TOTAL_SIGNALS = 5000;
+            const BATCH_SIZE = 50;
+            const VISUAL_BATCH = 100;
+
+            for (let i = 0; i < TOTAL_SIGNALS; i += BATCH_SIZE) {
+                for (let j = 0; j < BATCH_SIZE && i + j < TOTAL_SIGNALS; j++) {
+                    const result = simulateSignal();
+                    GameState.simResults.total++;
+                    if (result) {
+                        GameState.simResults.success++;
+                    } else {
+                        GameState.simResults.failure++;
+                    }
+
+                    // Update trace visualization
+                    if ((i + j) % 10 === 0) {
+                        const bar = document.createElement('div');
+                        bar.className = 'signal-bar ' + (result ? 'success' : 'failure');
+                        bar.style.left = `${((i + j) / TOTAL_SIGNALS) * 100}%`;
+                        bar.style.height = result ? '100%' : '30%';
+                        signalTrace.appendChild(bar);
+                    }
+                }
+
+                // Update UI periodically
+                if (i % VISUAL_BATCH === 0) {
+                    updateUI();
+                    await new Promise(r => setTimeout(r, 1));
+                }
+            }
+
+            GameState.isSimulating = false;
+            document.getElementById('simIndicator').classList.remove('running');
+            document.getElementById('simStatus').textContent = 'Simulation complete';
+            document.getElementById('runSimBtn').disabled = false;
+
+            // Clear node signals
+            GameState.nodes.forEach(n => n.currentSignal = null);
+            GameState.connections.forEach(c => c.signal = null);
+            
+            updateUI();
+            render();
+            checkVictory();
+        }
+
+        function hasPath(from, to, visited = new Set()) {
+            if (from === to) return true;
+            visited.add(from);
+            
+            const outgoing = GameState.connections.filter(c => c.from === from);
+            for (const conn of outgoing) {
+                if (!visited.has(conn.to) && hasPath(conn.to, to, visited)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function simulateSignal() {
+            const source = GameState.nodes.find(n => n.type === 'source');
+            const target = GameState.nodes.find(n => n.type === 'target');
+            
+            // Reset all signals
+            const nodeSignals = new Map();
+            GameState.nodes.forEach(n => nodeSignals.set(n, null));
+            nodeSignals.set(source, true); // Start with green
+
+            // Topological processing
+            const processed = new Set([source]);
+            let changed = true;
+            let iterations = 0;
+            const maxIterations = 100;
+
+            while (changed && iterations < maxIterations) {
+                changed = false;
+                iterations++;
+
+                for (const node of GameState.nodes) {
+                    if (processed.has(node)) continue;
+
+                    const incomingConns = GameState.connections.filter(c => c.to === node);
+                    const incomingSignals = incomingConns.map(c => nodeSignals.get(c.from));
+
+                    // Check if all inputs are ready
+                    if (incomingConns.length === 0) continue;
+                    if (incomingSignals.some(s => s === null)) continue;
+
+                    let outputSignal;
+
+                    switch (node.type) {
+                        case 'node':
+                            // Random failure
+                            outputSignal = incomingSignals[0];
+                            if (Math.random() < node.failureRate) {
+                                outputSignal = !outputSignal;
+                            }
+                            break;
+
+                        case 'failnode':
+                            // Always corrupts
+                            outputSignal = !incomingSignals[0];
+                            break;
+
+                        case 'byzantine':
+                            // Handled specially - stores different outputs per connection
+                            const baseSignal = incomingSignals[0];
+                            const willLie = Math.random() < 0.5;
+                            if (willLie) {
+                                // Generate random outputs for each outgoing connection
+                                node.byzantineOutputs = {};
+                                GameState.connections.filter(c => c.from === node).forEach(conn => {
+                                    node.byzantineOutputs[conn.to.id] = Math.random() < 0.5;
+                                });
+                            } else {
+                                GameState.connections.filter(c => c.from === node).forEach(conn => {
+                                    node.byzantineOutputs[conn.to.id] = baseSignal;
+                                });
+                            }
+                            outputSignal = baseSignal; // Default
+                            break;
+
+                        case 'splitter':
+                            // Pass through (outputs handled when reading)
+                            outputSignal = incomingSignals[0];
+                            break;
+
+                        case 'voter':
+                            // Majority vote (need exactly 3 inputs)
+                            if (incomingSignals.length >= 3) {
+                                const trueCount = incomingSignals.filter(s => s === true).length;
+                                outputSignal = trueCount >= 2;
+                            } else {
+                                outputSignal = incomingSignals[0] ?? false;
+                            }
+                            break;
+
+                        case 'target':
+                            outputSignal = incomingSignals[0];
+                            break;
+
+                        default:
+                            outputSignal = incomingSignals[0];
+                    }
+
+                    nodeSignals.set(node, outputSignal);
+                    processed.add(node);
+                    changed = true;
+                }
+            }
+
+            // Special handling for Byzantine outputs when reading
+            for (const conn of GameState.connections) {
+                if (conn.from.type === 'byzantine' && conn.from.byzantineOutputs[conn.to.id] !== undefined) {
+                    // Override the signal for this specific connection
+                    const byzantineSignal = conn.from.byzantineOutputs[conn.to.id];
+                    // This affects how the voter sees it
+                }
+            }
+
+            return nodeSignals.get(target) === true;
+        }
+
+        function checkVictory() {
+            const level = LEVELS[GameState.currentLevel];
+            const errorRate = GameState.simResults.failure / GameState.simResults.total * 100;
+            
+            if (errorRate < level.targetError && !GameState.levelCompleted) {
+                GameState.levelCompleted = true;
+                showVictoryModal(errorRate);
+            }
+        }
+
+        function showVictoryModal(errorRate) {
+            const level = LEVELS[GameState.currentLevel];
+            const usedBudget = level.budget - GameState.budget;
+            const componentCount = GameState.nodes.filter(n => 
+                n.type !== 'source' && n.type !== 'target'
+            ).length;
+
+            document.getElementById('modalErrorRate').textContent = errorRate.toFixed(2) + '%';
+            document.getElementById('modalBudget').textContent = usedBudget;
+            document.getElementById('modalNodes').textContent = componentCount;
+
+            const isLastLevel = GameState.currentLevel >= LEVELS.length - 1;
+            document.getElementById('modalNextBtn').style.display = isLastLevel ? 'none' : 'block';
+            
+            if (isLastLevel) {
+                document.getElementById('modalTitle').textContent = 'MISSION COMPLETE';
+                document.getElementById('modalMessage').textContent = 
+                    'You\'ve mastered Byzantine fault tolerance! You now understand how to build reliable systems from unreliable components.';
+            }
+
+            document.getElementById('victoryModal').classList.add('visible');
+            updateUI();
+        }
+
+        // ============== BUTTON HANDLERS ==============
+        document.getElementById('runSimBtn').onclick = runSimulation;
+        
+        document.getElementById('clearBtn').onclick = () => {
+            if (GameState.isSimulating) return;
+            initLevel(GameState.currentLevel);
+        };
+
+        document.getElementById('hintBtn').onclick = () => {
+            const hintPanel = document.getElementById('hintPanel');
+            const level = LEVELS[GameState.currentLevel];
+            if (hintPanel.style.display === 'none') {
+                document.getElementById('hintText').textContent = level.hintDescription;
+                hintPanel.style.display = 'block';
+            } else {
+                hintPanel.style.display = 'none';
+            }
+        };
+
+        document.getElementById('nextLevelBtn').onclick = () => {
+            if (GameState.currentLevel < LEVELS.length - 1) {
+                initLevel(GameState.currentLevel + 1);
+            }
+        };
+
+        document.getElementById('modalNextBtn').onclick = () => {
+            document.getElementById('victoryModal').classList.remove('visible');
+            if (GameState.currentLevel < LEVELS.length - 1) {
+                initLevel(GameState.currentLevel + 1);
+            }
+        };
+
+        document.getElementById('modalCloseBtn').onclick = () => {
+            document.getElementById('victoryModal').classList.remove('visible');
+        };
+
+        // ============== STARTUP ==============
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        initLevel(0);
+    </script>
+</body>
+</html>
