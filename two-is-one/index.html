@@ -109,18 +109,21 @@
   .service-card.offline {
     border-color: var(--red);
     box-shadow: 0 0 20px rgba(248, 113, 113, 0.15);
-    animation: pulse-red 1.5s ease-in-out;
+  }
+  .service-card.offline-flash {
+    border-color: var(--red);
+    animation: pulse-red 1s ease-in-out 2;
   }
   @keyframes pulse-red {
     0%, 100% { box-shadow: 0 0 20px rgba(248, 113, 113, 0.15); }
-    50% { box-shadow: 0 0 30px rgba(248, 113, 113, 0.3); }
+    50% { box-shadow: 0 0 35px rgba(248, 113, 113, 0.4); }
   }
 
   .service-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
   }
   .service-name {
     font-weight: 600;
@@ -133,6 +136,7 @@
     letter-spacing: 1px;
     padding: 2px 8px;
     border-radius: 4px;
+    transition: all 0.3s;
   }
   .service-status.online {
     color: var(--green);
@@ -142,37 +146,85 @@
     color: var(--red);
     background: rgba(248, 113, 113, 0.1);
   }
+  .service-status.checking {
+    color: var(--accent);
+    background: rgba(56, 189, 248, 0.1);
+  }
 
-  .instance-row {
+  /* ─── Topology SVG ─── */
+  .topology-container {
+    margin: 6px 0 10px 0;
     display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+    justify-content: center;
   }
-  .instance-label {
-    font-size: 12px;
-    color: var(--text-dim);
-    min-width: 70px;
+  .topology-svg {
+    display: block;
   }
-  .instance-dots {
-    display: flex;
-    gap: 5px;
-    flex: 1;
+  .topology-svg line {
+    stroke-width: 1.5;
+    transition: stroke 0.3s, opacity 0.3s;
   }
-  .instance-dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--green);
-    transition: background 0.3s, transform 0.3s;
+  .topology-svg .link-shared { stroke: var(--orange); opacity: 0.4; }
+  .topology-svg .link-shared.failed { stroke: var(--red); opacity: 0.7; }
+  .topology-svg .link-diverse { stroke: var(--purple); opacity: 0.35; }
+  .topology-svg .link-diverse.failed { stroke: var(--red); opacity: 0.7; }
+  .topology-svg .link-empty { stroke: var(--border); opacity: 0.2; stroke-dasharray: 3 3; }
+
+  .topology-svg circle, .topology-svg rect {
+    transition: fill 0.3s, stroke 0.3s, opacity 0.3s;
   }
-  .instance-dot.failed {
-    background: var(--red);
-    transform: scale(0.8);
+  .topology-svg .node-service { fill: var(--accent); stroke: none; }
+  .topology-svg .node-instance { fill: var(--green); stroke: none; }
+  .topology-svg .node-instance.failed { fill: var(--red); }
+  .topology-svg .node-empty { fill: none; stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 2; }
+  .topology-svg .node-shared { fill: var(--orange); stroke: none; opacity: 0.8; }
+  .topology-svg .node-shared.danger { fill: var(--red); opacity: 1; }
+
+  .topology-svg text {
+    font-family: inherit;
+    fill: var(--text-dim);
   }
-  .instance-dot.empty {
-    background: var(--surface2);
-    border: 1px dashed var(--border);
+  .topology-svg .label-shared { font-size: 7px; fill: var(--orange); opacity: 0.7; }
+  .topology-svg .label-zone { font-size: 7px; fill: var(--purple); opacity: 0.7; }
+  .topology-svg .label-zone.failed { fill: var(--red); }
+
+  /* Animation: flickering instance nodes */
+  .topology-svg .node-instance.flickering {
+    animation: svg-flicker 0.12s infinite alternate;
+  }
+  @keyframes svg-flicker {
+    0% { fill: var(--green); opacity: 1; }
+    100% { fill: var(--text-dim); opacity: 0.3; }
+  }
+
+  /* Animation: scanning sweep on card */
+  .service-card.scanning::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(56,189,248,0.06) 50%, transparent 100%);
+    animation: scan-sweep 0.8s ease-in-out;
+    pointer-events: none;
+  }
+  @keyframes scan-sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Animation: checking glow on card */
+  .service-card.checking {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.12);
+  }
+
+  /* Animation: shared node pulse during correlated check */
+  .topology-svg .node-shared.pulse {
+    animation: shared-pulse 0.4s ease-in-out 2;
+  }
+  @keyframes shared-pulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; fill: var(--red); }
   }
 
   .service-controls {
@@ -235,8 +287,9 @@
   /* Action bar */
   .action-bar {
     display: flex;
-    justify-content: center;
-    gap: 12px;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 24px;
   }
   .btn-primary {
@@ -260,6 +313,41 @@
     opacity: 0.3;
     cursor: not-allowed;
   }
+
+  /* Simulation progress */
+  .sim-progress {
+    text-align: center;
+    width: 100%;
+    max-width: 340px;
+  }
+  .sim-progress.hidden { display: none; }
+  .sim-phase {
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 6px;
+    min-height: 18px;
+  }
+  .sim-bar {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .sim-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.25s ease;
+    width: 0%;
+  }
+  .sim-skip {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    cursor: pointer;
+    opacity: 0.6;
+  }
+  .sim-skip:hover { opacity: 1; }
 
   /* Event log */
   .log-panel {
@@ -370,7 +458,7 @@
     padding: 0;
   }
   .screen-box li::before {
-    content: "› ";
+    content: "> ";
     color: var(--accent);
     font-weight: bold;
   }
@@ -448,29 +536,6 @@
     transition: width 0.5s ease, background 0.5s ease;
   }
 
-  /* Tooltip */
-  .tip {
-    position: relative;
-    cursor: help;
-    border-bottom: 1px dotted var(--text-dim);
-  }
-  .tip:hover::after {
-    content: attr(data-tip);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    white-space: nowrap;
-    z-index: 10;
-    pointer-events: none;
-  }
-
   /* Responsive */
   @media (max-width: 600px) {
     .services-grid { grid-template-columns: 1fr; }
@@ -515,6 +580,10 @@
       <li><span style="color:var(--red)">Correlated</span> &mdash; a common cause takes out ALL instances at once (5%). Diversifying reduces this.</li>
       <li><span style="color:var(--purple)">Complexity</span> &mdash; too many instances (4+) creates management overhead that causes its own failures.</li>
     </ul>
+    <p style="color: var(--text); font-weight: 600;">Watch the topology:</p>
+    <p>Each service card shows its infrastructure topology. Without diversification, all instances
+    share a common infrastructure node (the orange diamond) &mdash; a single point of correlation.
+    Diversifying splits them onto independent paths.</p>
     <p style="color:var(--text-dim); font-size: 11px; text-align: center; margin-top: 12px;">
       Find the sweet spot. Pure redundancy has limits.
     </p>
@@ -548,6 +617,11 @@
 
   <div class="action-bar">
     <button class="btn-primary" id="run-day-btn" onclick="runDay()">Run Day</button>
+    <div class="sim-progress hidden" id="sim-progress">
+      <div class="sim-phase" id="sim-phase"></div>
+      <div class="sim-bar"><div class="sim-fill" id="sim-fill"></div></div>
+      <div class="sim-skip" id="sim-skip" onclick="skipAnimation=true">click to skip</div>
+    </div>
   </div>
 
   <div class="log-panel">
@@ -604,7 +678,7 @@ const STARTING_REPUTATION = 100;
 
 // ─── RANDOM EVENTS ───
 const EVENTS = [
-  null, null, null, null, null,  // 50% chance of no event
+  null, null, null, null, null,
   { type: 'storm', label: 'Power Grid Instability', desc: 'Correlated failure rates doubled this day.', class: 'danger' },
   { type: 'surge', label: 'Traffic Surge', desc: 'Independent failure rates increased to 30% this day.', class: 'danger' },
   { type: 'bonus', label: 'Budget Surplus', desc: 'You receive 4 bonus credits today.', class: 'good' },
@@ -614,6 +688,7 @@ const EVENTS = [
 
 // ─── GAME STATE ───
 let state;
+let skipAnimation = false;
 
 function initState() {
   return {
@@ -658,7 +733,7 @@ function removeInstance(idx) {
   const svc = state.services[idx];
   if (svc.instances <= 1 || state.phase !== 'planning') return;
   svc.instances--;
-  state.budget += 2; // partial refund
+  state.budget += 2;
   render();
 }
 
@@ -682,13 +757,13 @@ function calculateReliability(service, event) {
   const corrBase = service.diversified ? CORRELATED_FAIL_DIVERSIFIED : CORRELATED_FAIL_BASE;
   const corrRate = event?.type === 'storm' ? Math.min(corrBase * 2, 0.15) : corrBase;
   const compRate = getComplexityRate(n);
-
   const pAllIndepFail = Math.pow(indepRate, n);
   const pUp = (1 - pAllIndepFail) * (1 - corrRate) * (1 - compRate);
   return Math.max(0, Math.min(1, pUp));
 }
 
-function simulateService(service, event) {
+// Pure computation — no side effects
+function computeOutcome(service, event) {
   const n = service.instances;
   const indepRate = event?.type === 'surge' ? 0.30 : event?.type === 'patch' ? 0.10 : INDEPENDENT_FAIL_RATE;
   const corrBase = service.diversified ? CORRELATED_FAIL_DIVERSIFIED : CORRELATED_FAIL_BASE;
@@ -698,54 +773,172 @@ function simulateService(service, event) {
   let failedInstances = [];
   let outageReason = null;
 
-  // Check correlated failure first
   if (Math.random() < corrRate) {
     outageReason = 'correlated';
     failedInstances = Array.from({ length: n }, (_, i) => i);
-  }
-  // Check complexity cascade
-  else if (Math.random() < compRate) {
+  } else if (Math.random() < compRate) {
     outageReason = 'complexity';
     failedInstances = Array.from({ length: n }, (_, i) => i);
-  }
-  // Check independent failures
-  else {
+  } else {
     for (let i = 0; i < n; i++) {
-      if (Math.random() < indepRate) {
-        failedInstances.push(i);
-      }
+      if (Math.random() < indepRate) failedInstances.push(i);
     }
-    if (failedInstances.length === n) {
-      outageReason = 'independent';
-    }
+    if (failedInstances.length === n) outageReason = 'independent';
   }
 
-  service.failedInstances = failedInstances;
   const isDown = failedInstances.length === n;
-  service.lastStatus = isDown ? 'offline' : 'online';
-
-  if (isDown) {
-    service.outages++;
-    service.outageTypes[outageReason]++;
-  }
-
-  return { isDown, outageReason, failedInstances, failedCount: failedInstances.length };
+  return { failedInstances, isDown, outageReason, failedCount: failedInstances.length };
 }
 
-function runDay() {
-  if (state.phase !== 'planning' || state.gameOver) return;
-  state.phase = 'simulating';
+// ─── ANIMATION HELPERS ───
 
-  // Pick random event
-  const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
-  state.currentEvent = event;
+function sleep(ms) {
+  if (skipAnimation) return Promise.resolve();
+  return new Promise(r => setTimeout(r, ms));
+}
 
-  addLog(`<span class="day-marker">── Day ${state.day} ──</span>`);
-  if (event) {
-    addLog(`<span class="event">EVENT: ${event.label}</span> — ${event.desc}`);
+function setSimProgress(phase, pct) {
+  document.getElementById('sim-phase').textContent = phase;
+  document.getElementById('sim-fill').style.width = pct + '%';
+}
+
+function scrollLog() {
+  const el = document.getElementById('log-entries');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ─── TOPOLOGY SVG RENDERING ───
+
+function getInstanceXPositions(count, width) {
+  if (count === 0) return [];
+  const pad = 28;
+  const usable = width - 2 * pad;
+  if (count === 1) return [width / 2];
+  return Array.from({ length: count }, (_, i) => pad + (usable * i / (count - 1)));
+}
+
+function renderTopologySvg(svc, extraClasses) {
+  const n = svc.instances;
+  const w = 200, h = 80;
+  const svcY = 10, svcR = 6;
+  const svcX = w / 2;
+  const instR = 5;
+  const zones = ['US-E', 'US-W', 'EU', 'APAC', 'SA', 'AF'];
+  const classes = extraClasses || {};
+
+  let svg = `<svg class="topology-svg" viewBox="0 0 ${w} ${h}" width="100%" preserveAspectRatio="xMidYMid meet">`;
+
+  const instXs = getInstanceXPositions(n, w);
+  const allXs = getInstanceXPositions(MAX_INSTANCES, w);
+
+  if (!svc.diversified) {
+    // ── SHARED INFRASTRUCTURE ──
+    const sharedY = 35;
+    const instY = 62;
+
+    // Line: service → shared
+    if (n > 0) {
+      svg += `<line x1="${svcX}" y1="${svcY+svcR}" x2="${svcX}" y2="${sharedY-6}" class="link-shared"/>`;
+    }
+    // Shared infra diamond
+    if (n > 0) {
+      const sharedCls = classes.sharedDanger ? 'node-shared danger' : (classes.sharedPulse ? 'node-shared pulse' : 'node-shared');
+      svg += `<polygon points="${svcX},${sharedY-7} ${svcX+8},${sharedY} ${svcX},${sharedY+7} ${svcX-8},${sharedY}" class="${sharedCls}"/>`;
+      svg += `<text x="${svcX}" y="${sharedY+17}" text-anchor="middle" class="label-shared">shared infra</text>`;
+    }
+    // Lines: shared → instances
+    instXs.forEach((x, i) => {
+      const failed = svc.failedInstances.includes(i);
+      svg += `<line x1="${svcX}" y1="${sharedY+7}" x2="${x}" y2="${instY-instR}" class="link-shared${failed ? ' failed' : ''}"/>`;
+    });
+    // Empty slot lines
+    for (let i = n; i < MAX_INSTANCES; i++) {
+      svg += `<line x1="${svcX}" y1="${sharedY+7}" x2="${allXs[i]}" y2="${instY-instR}" class="link-empty"/>`;
+    }
+    // Instance nodes
+    instXs.forEach((x, i) => {
+      const failed = svc.failedInstances.includes(i);
+      const flicker = classes.flickering && !classes.resolved;
+      let cls = 'node-instance';
+      if (flicker) cls += ' flickering';
+      else if (failed) cls += ' failed';
+      svg += `<circle cx="${x}" cy="${instY}" r="${instR}" class="${cls}" data-idx="${i}"/>`;
+    });
+    // Empty slots
+    for (let i = n; i < MAX_INSTANCES; i++) {
+      svg += `<circle cx="${allXs[i]}" cy="${instY}" r="${instR}" class="node-empty"/>`;
+    }
+  } else {
+    // ── DIVERSIFIED (independent paths) ──
+    const instY = 52;
+
+    // Lines: service → each instance (independent)
+    instXs.forEach((x, i) => {
+      const failed = svc.failedInstances.includes(i);
+      svg += `<line x1="${svcX}" y1="${svcY+svcR}" x2="${x}" y2="${instY-instR}" class="link-diverse${failed ? ' failed' : ''}"/>`;
+    });
+    // Empty slot lines
+    for (let i = n; i < MAX_INSTANCES; i++) {
+      svg += `<line x1="${svcX}" y1="${svcY+svcR}" x2="${allXs[i]}" y2="${instY-instR}" class="link-empty"/>`;
+    }
+    // Instance nodes
+    instXs.forEach((x, i) => {
+      const failed = svc.failedInstances.includes(i);
+      const flicker = classes.flickering && !classes.resolved;
+      let cls = 'node-instance';
+      if (flicker) cls += ' flickering';
+      else if (failed) cls += ' failed';
+      svg += `<circle cx="${x}" cy="${instY}" r="${instR}" class="${cls}" data-idx="${i}"/>`;
+    });
+    // Empty slots
+    for (let i = n; i < MAX_INSTANCES; i++) {
+      svg += `<circle cx="${allXs[i]}" cy="${instY}" r="${instR}" class="node-empty"/>`;
+    }
+    // Zone labels
+    instXs.forEach((x, i) => {
+      const failed = svc.failedInstances.includes(i);
+      svg += `<text x="${x}" y="${instY+15}" text-anchor="middle" class="label-zone${failed ? ' failed' : ''}">${zones[i]}</text>`;
+    });
   }
 
-  // Handle audit event (penalty for single-instance services)
+  // Service node (always on top)
+  svg += `<circle cx="${svcX}" cy="${svcY}" r="${svcR}" class="node-service"/>`;
+  svg += `</svg>`;
+  return svg;
+}
+
+// ─── ANIMATED DAY SIMULATION ───
+
+async function runDay() {
+  if (state.phase !== 'planning' || state.gameOver) return;
+  state.phase = 'simulating';
+  skipAnimation = false;
+
+  const btn = document.getElementById('run-day-btn');
+  const progress = document.getElementById('sim-progress');
+  btn.style.display = 'none';
+  progress.classList.remove('hidden');
+
+  // Pre-compute ALL outcomes before animation
+  const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+  state.currentEvent = event;
+  const outcomes = state.services.map(svc => computeOutcome(svc, event));
+
+  // ── Phase 0: Day header + event ──
+  setSimProgress('Starting day ' + state.day + '...', 5);
+  addLog(`<span class="day-marker">── Day ${state.day} ──</span>`);
+  renderLog();
+  await sleep(300);
+
+  if (event) {
+    addLog(`<span class="event">EVENT: ${event.label}</span> — ${event.desc}`);
+    renderEvent();
+    renderLog();
+    scrollLog();
+    await sleep(500);
+  }
+
+  // Handle audit
   if (event?.type === 'audit') {
     state.services.forEach(svc => {
       if (svc.instances === 1) {
@@ -753,41 +946,119 @@ function runDay() {
         addLog(`<span class="warning">AUDIT:</span> ${svc.name} flagged — single point of failure. <span class="failure">-10 reputation</span>`);
       }
     });
+    renderLog();
+    renderStats();
+    scrollLog();
+    await sleep(400);
   }
-
-  // Handle bonus budget
   if (event?.type === 'bonus') {
     state.budget += 4;
+    renderStats();
   }
 
-  // Simulate each service
+  // ── Phase 1: Infrastructure scan ──
+  setSimProgress('Scanning infrastructure...', 15);
+  document.querySelectorAll('.service-card').forEach(card => card.classList.add('scanning'));
+  await sleep(800);
+  document.querySelectorAll('.service-card').forEach(card => card.classList.remove('scanning'));
+
+  // ── Phase 2: Per-service checks ──
   let dayOutages = 0;
-  state.services.forEach((svc, idx) => {
-    const result = simulateService(svc, event);
-    if (result.isDown) {
+  for (let i = 0; i < state.services.length; i++) {
+    const svc = state.services[i];
+    const outcome = outcomes[i];
+    const pct = 25 + (i * 14);
+    setSimProgress('Checking ' + svc.name + '...', pct);
+
+    const card = document.getElementById('svc-' + i);
+    if (!card) continue;
+
+    // Add checking state
+    card.classList.add('checking');
+    const statusEl = card.querySelector('.service-status');
+    if (statusEl) {
+      statusEl.textContent = 'checking';
+      statusEl.className = 'service-status checking';
+    }
+
+    // Flicker instance nodes
+    const topoContainer = card.querySelector('.topology-container');
+    if (topoContainer) {
+      topoContainer.innerHTML = renderTopologySvg(svc, { flickering: true });
+    }
+
+    // If correlated failure, pulse the shared node
+    if (outcome.outageReason === 'correlated' && !svc.diversified) {
+      await sleep(200);
+      if (topoContainer) {
+        topoContainer.innerHTML = renderTopologySvg(svc, { flickering: true, sharedPulse: true });
+      }
+      await sleep(400);
+    } else {
+      await sleep(400);
+    }
+
+    // ── Resolve: apply outcome ──
+    svc.failedInstances = outcome.failedInstances;
+    svc.lastStatus = outcome.isDown ? 'offline' : 'online';
+
+    if (outcome.isDown) {
+      svc.outages++;
+      svc.outageTypes[outcome.outageReason]++;
       dayOutages++;
       state.totalOutages++;
       if (svc.instances === 1) state.singleInstanceOutages++;
-      if (result.outageReason === 'independent') state.totalIndependent++;
-      if (result.outageReason === 'correlated') state.totalCorrelated++;
-      if (result.outageReason === 'complexity') state.totalComplexity++;
-
+      if (outcome.outageReason === 'independent') state.totalIndependent++;
+      if (outcome.outageReason === 'correlated') state.totalCorrelated++;
+      if (outcome.outageReason === 'complexity') state.totalComplexity++;
       state.reputation -= OUTAGE_PENALTY;
+    }
 
+    // Update topology to show resolved state
+    if (topoContainer) {
+      const resolvedClasses = { resolved: true };
+      if (outcome.outageReason === 'correlated' && !svc.diversified) resolvedClasses.sharedDanger = true;
+      topoContainer.innerHTML = renderTopologySvg(svc, resolvedClasses);
+    }
+
+    // Update status badge
+    if (statusEl) {
+      statusEl.textContent = svc.lastStatus;
+      statusEl.className = 'service-status ' + svc.lastStatus;
+    }
+
+    // Update card class
+    card.classList.remove('checking', 'online', 'offline', 'offline-flash');
+    if (outcome.isDown) {
+      card.classList.add('offline-flash');
+    } else {
+      card.classList.add('online');
+    }
+
+    // Log entry
+    if (outcome.isDown) {
       const reasonLabel = {
         independent: '<span class="warning">all instances failed independently</span>',
         correlated: '<span class="failure">correlated common-cause failure</span>',
         complexity: '<span class="event">complexity cascade</span>',
-      }[result.outageReason];
+      }[outcome.outageReason];
       addLog(`<span class="failure">OUTAGE:</span> ${svc.name} — ${reasonLabel} <span class="failure">(-${OUTAGE_PENALTY} rep)</span>`);
-    } else if (result.failedCount > 0) {
-      addLog(`<span class="warning">DEGRADED:</span> ${svc.name} — ${result.failedCount}/${svc.instances} instances failed, service survived`);
+    } else if (outcome.failedCount > 0) {
+      addLog(`<span class="warning">DEGRADED:</span> ${svc.name} — ${outcome.failedCount}/${svc.instances} instances failed, service survived`);
     } else {
       addLog(`<span class="success">OK:</span> ${svc.name} — all ${svc.instances} instances healthy`);
     }
-  });
+    renderLog();
+    renderStats();
+    scrollLog();
 
-  // Score calculation
+    await sleep(200);
+  }
+
+  // ── Phase 3: Day summary ──
+  setSimProgress('Compiling results...', 92);
+  await sleep(300);
+
   const servicesUp = state.services.filter(s => s.lastStatus === 'online').length;
   if (dayOutages === 0) {
     state.streak++;
@@ -798,13 +1069,11 @@ function runDay() {
   const dayScore = Math.round(servicesUp * UPTIME_POINTS * streakMultiplier);
   state.score += dayScore;
 
-  // Reputation recovery on clean days
   if (dayOutages === 0 && state.reputation < STARTING_REPUTATION) {
     const recovery = Math.min(CLEAN_DAY_RECOVERY, STARTING_REPUTATION - state.reputation);
     state.reputation += recovery;
     addLog(`<span class="success">STABLE:</span> Clean day — <span class="success">+${recovery} reputation recovered</span>`);
   }
-
   if (state.streak > 1) {
     addLog(`<span class="info">Streak bonus: x${streakMultiplier.toFixed(1)} multiplier (${state.streak} clean days)</span>`);
   }
@@ -820,22 +1089,25 @@ function runDay() {
     addLog(`<span class="success">SIMULATION COMPLETE: Survived all 30 days!</span>`);
   }
 
+  setSimProgress('Day complete.', 100);
+  await sleep(400);
+
   // Advance day
   state.day++;
   state.budget += DAILY_BUDGET;
   state.phase = 'planning';
 
+  // Hide progress, show button
+  progress.classList.add('hidden');
+  btn.style.display = '';
+
   render();
 
   if (state.gameOver) {
-    setTimeout(showGameOver, 1200);
+    setTimeout(showGameOver, 800);
   }
 
-  // Scroll log to bottom
-  setTimeout(() => {
-    const logEl = document.getElementById('log-entries');
-    logEl.scrollTop = logEl.scrollHeight;
-  }, 50);
+  scrollLog();
 }
 
 function addLog(html) {
@@ -849,8 +1121,9 @@ function render() {
   renderServices();
   renderLog();
   renderEvent();
-  document.getElementById('run-day-btn').disabled = state.gameOver;
-  document.getElementById('run-day-btn').textContent =
+  const btn = document.getElementById('run-day-btn');
+  btn.disabled = state.gameOver || state.phase !== 'planning';
+  btn.textContent =
     state.gameOver ? 'Simulation Ended' :
     state.day === 1 && state.log.length === 0 ? 'Run Day 1' :
     `Run Day ${state.day}`;
@@ -873,35 +1146,22 @@ function renderServices() {
     const rel = calculateReliability(svc, null);
     const relPct = (rel * 100).toFixed(1);
     const relColor = rel > 0.93 ? 'var(--green)' : rel > 0.85 ? 'var(--orange)' : 'var(--red)';
-
-    const dots = [];
-    for (let i = 0; i < MAX_INSTANCES; i++) {
-      if (i < svc.instances) {
-        const failed = svc.failedInstances.includes(i);
-        dots.push(`<div class="instance-dot ${failed ? 'failed' : ''}"></div>`);
-      } else {
-        dots.push(`<div class="instance-dot empty"></div>`);
-      }
-    }
-
     const compRate = getComplexityRate(svc.instances);
     const compLabel = compRate > 0 ? `<span class="meta-item"><span class="meta-dot ${compRate > 0.05 ? 'red' : 'orange'}"></span>Complexity: ${(compRate * 100).toFixed(0)}%</span>` : '';
 
     return `
-      <div class="service-card ${svc.lastStatus}">
+      <div class="service-card ${svc.lastStatus}" id="svc-${idx}">
         <div class="service-header">
           <span class="service-name">${svc.name}</span>
           <span class="service-status ${svc.lastStatus}">${svc.lastStatus}</span>
         </div>
-        <div class="instance-row">
-          <span class="instance-label">Instances</span>
-          <div class="instance-dots">${dots.join('')}</div>
-          <span style="font-size:13px; font-weight:600; min-width: 18px; text-align:center;">${svc.instances}</span>
+        <div class="topology-container">
+          ${renderTopologySvg(svc)}
         </div>
         <div class="service-controls">
-          <button class="btn" onclick="removeInstance(${idx})" ${svc.instances <= 1 || state.phase !== 'planning' ? 'disabled' : ''}>- Remove (↩2)</button>
-          <button class="btn" onclick="addInstance(${idx})" ${svc.instances >= MAX_INSTANCES || state.budget < INSTANCE_COST || state.phase !== 'planning' ? 'disabled' : ''}>+ Add (${INSTANCE_COST}¢)</button>
-          <button class="btn diversify ${svc.diversified ? 'active' : ''}" onclick="diversify(${idx})" ${svc.diversified || state.budget < DIVERSIFY_COST || state.phase !== 'planning' ? 'disabled' : ''}>${svc.diversified ? '✓ Diversified' : `Diversify (${DIVERSIFY_COST}¢)`}</button>
+          <button class="btn" onclick="removeInstance(${idx})" ${svc.instances <= 1 || state.phase !== 'planning' ? 'disabled' : ''}>- Remove</button>
+          <button class="btn" onclick="addInstance(${idx})" ${svc.instances >= MAX_INSTANCES || state.budget < INSTANCE_COST || state.phase !== 'planning' ? 'disabled' : ''}>+ Add (${INSTANCE_COST})</button>
+          <button class="btn diversify ${svc.diversified ? 'active' : ''}" onclick="diversify(${idx})" ${svc.diversified || state.budget < DIVERSIFY_COST || state.phase !== 'planning' ? 'disabled' : ''}>${svc.diversified ? 'Diversified' : `Diversify (${DIVERSIFY_COST})`}</button>
         </div>
         <div class="service-meta">
           <span class="meta-item"><span class="meta-dot ${rel > 0.93 ? 'green' : rel > 0.85 ? 'orange' : 'red'}"></span>Reliability: ${relPct}%</span>
@@ -944,7 +1204,6 @@ function showGameOver() {
   document.getElementById('final-summary').textContent =
     `Survived ${survived} day${survived !== 1 ? 's' : ''} with ${state.totalOutages} total outage${state.totalOutages !== 1 ? 's' : ''}.`;
 
-  // Build lessons
   const lessons = [];
 
   if (state.singleInstanceOutages > 0) {
@@ -975,8 +1234,7 @@ function showGameOver() {
     });
   }
 
-  const maxInst = state.maxInstancesUsed;
-  if (maxInst >= 4 && state.totalComplexity === 0) {
+  if (state.maxInstancesUsed >= 4 && state.totalComplexity === 0) {
     lessons.push({
       title: 'Lucky Complexity — You ran 4+ instances and got away with it',
       body: 'You added 4+ instances to some services without suffering a complexity cascade. That was luck — the risk was real. In production, high-instance-count clusters require sophisticated orchestration that itself becomes a failure vector.'
@@ -997,7 +1255,6 @@ function showGameOver() {
     });
   }
 
-  // Always add the summary lesson
   lessons.push({
     title: 'The Takeaway',
     body: 'Reliability comes from the right amount of redundancy, combined with independence (to prevent correlated failures) and simplicity (to prevent complexity cascades). The sweet spot is usually 2-3 diversified instances — not 1, and not 5.'
