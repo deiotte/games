@@ -16,6 +16,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { WebSocketServer } = require('ws');
 
 const PORT = parseInt(process.argv[2]) || 3000;
 
@@ -30,22 +31,12 @@ const LEVELS = {
     const rng = makeRng(seed);
     const len = 6;
     const code = Array.from({ length: len }, () => rng() % 10).join('');
-    const maskA = [];
-    const maskB = [];
     const indices = Array.from({ length: len }, (_, i) => i);
     shuffle(indices, rng);
-    for (let i = 0; i < len; i++) {
-      if (i < len / 2) {
-        maskA.push(indices[i]);
-        maskB.push(null);
-      } else {
-        maskA.push(null);
-        maskB.push(indices[i]);
-      }
-    }
-    // Sort masks to show digits in order
-    const playerA = code.split('').map((ch, i) => maskA.includes(i) ? ch : '_');
-    const playerB = code.split('').map((ch, i) => maskB.includes(i) ? ch : '_');
+    const setA = new Set(indices.slice(0, len / 2));
+    const setB = new Set(indices.slice(len / 2));
+    const playerA = code.split('').map((ch, i) => setA.has(i) ? ch : '_');
+    const playerB = code.split('').map((ch, i) => setB.has(i) ? ch : '_');
     return {
       type: 'splitCode',
       answer: code,
@@ -107,7 +98,6 @@ const LEVELS = {
   fragmentedMap(seed) {
     const rng = makeRng(seed);
     const size = 6;
-    // Generate a random walk path
     const pathCells = [];
     let r = 0, c = 0;
     pathCells.push(`${r},${c}`);
@@ -141,7 +131,7 @@ const LEVELS = {
   },
 
   // Level 4: Symbol Sequence
-  // A sequence of symbols. Player A sees odd-indexed symbols, player B sees even-indexed.
+  // A sequence of symbols. Player A sees even-indexed symbols, player B sees odd-indexed.
   // They must reconstruct the full sequence in order.
   symbolSequence(seed) {
     const rng = makeRng(seed);
@@ -269,7 +259,7 @@ function broadcastState(room) {
       submitted: !!room.submissions[role],
       partnerSubmitted: !!room.submissions[role === 'A' ? 'B' : 'A'],
     };
-    send(ws, msg);
+    wsSend(ws, msg);
   }
 }
 
@@ -277,149 +267,39 @@ function broadcastLobby(room) {
   for (const role of ['A', 'B']) {
     const ws = room.players[role];
     if (!ws) continue;
-    send(ws, {
+    wsSend(ws, {
       type: 'lobby',
       roomCode: room.code,
       role,
       playerName: room.playerNames[role],
       partnerName: room.playerNames[role === 'A' ? 'B' : 'A'] || null,
-      ready: room.players.A && room.players.B,
+      ready: !!(room.players.A && room.players.B),
     });
   }
 }
 
-function send(ws, data) {
-  if (ws.readyState === 1) { // WebSocket.OPEN
+function wsSend(ws, data) {
+  if (ws.readyState === ws.OPEN) {
     ws.send(JSON.stringify(data));
   }
 }
 
-// ─── WebSocket Handling (raw, no dependencies) ──────────────────────────────────
-
-function acceptWebSocket(req, socket, head) {
-  const key = req.headers['sec-websocket-key'];
-  const magic = '258EAFA5-E914-47DA-95CA-5AB5FE8D3963';
-  const accept = crypto.createHash('sha1').update(key + magic).digest('base64');
-
-  socket.write(
-    'HTTP/1.1 101 Switching Protocols\r\n' +
-    'Upgrade: websocket\r\n' +
-    'Connection: Upgrade\r\n' +
-    `Sec-WebSocket-Accept: ${accept}\r\n` +
-    '\r\n'
-  );
-
-  const ws = new WsConnection(socket);
-  return ws;
+function broadcastResult(room, correct, gameWon) {
+  for (const role of ['A', 'B']) {
+    const ws = room.players[role];
+    if (!ws) continue;
+    wsSend(ws, {
+      type: 'result',
+      correct,
+      gameWon,
+      levelIndex: room.levelIndex,
+      totalLevels: room.levelOrder.length,
+    });
+  }
 }
 
-class WsConnection {
-  constructor(socket) {
-    this.socket = socket;
-    this.readyState = 1;
-    this._buffer = Buffer.alloc(0);
-    this._onMessage = null;
-    this._onClose = null;
-
-    socket.on('data', (chunk) => this._handleData(chunk));
-    socket.on('close', () => { this.readyState = 3; if (this._onClose) this._onClose(); });
-    socket.on('error', () => { this.readyState = 3; if (this._onClose) this._onClose(); });
-  }
-
-  set onmessage(fn) { this._onMessage = fn; }
-  set onclose(fn) { this._onClose = fn; }
-
-  send(data) {
-    if (this.readyState !== 1) return;
-    const payload = Buffer.from(data);
-    const frame = this._encodeFrame(payload);
-    this.socket.write(frame);
-  }
-
-  close() {
-    this.readyState = 2;
-    try {
-      const frame = Buffer.alloc(2);
-      frame[0] = 0x88;
-      frame[1] = 0x00;
-      this.socket.write(frame);
-    } catch (_) {}
-    this.socket.end();
-  }
-
-  _encodeFrame(payload) {
-    const len = payload.length;
-    let header;
-    if (len < 126) {
-      header = Buffer.alloc(2);
-      header[0] = 0x81;
-      header[1] = len;
-    } else if (len < 65536) {
-      header = Buffer.alloc(4);
-      header[0] = 0x81;
-      header[1] = 126;
-      header.writeUInt16BE(len, 2);
-    } else {
-      header = Buffer.alloc(10);
-      header[0] = 0x81;
-      header[1] = 127;
-      header.writeBigUInt64BE(BigInt(len), 2);
-    }
-    return Buffer.concat([header, payload]);
-  }
-
-  _handleData(chunk) {
-    this._buffer = Buffer.concat([this._buffer, chunk]);
-    while (this._buffer.length >= 2) {
-      const firstByte = this._buffer[0];
-      const opcode = firstByte & 0x0f;
-      const masked = (this._buffer[1] & 0x80) !== 0;
-      let payloadLen = this._buffer[1] & 0x7f;
-      let offset = 2;
-
-      if (payloadLen === 126) {
-        if (this._buffer.length < 4) return;
-        payloadLen = this._buffer.readUInt16BE(2);
-        offset = 4;
-      } else if (payloadLen === 127) {
-        if (this._buffer.length < 10) return;
-        payloadLen = Number(this._buffer.readBigUInt64BE(2));
-        offset = 10;
-      }
-
-      const maskLen = masked ? 4 : 0;
-      const totalLen = offset + maskLen + payloadLen;
-      if (this._buffer.length < totalLen) return;
-
-      const maskKey = masked ? this._buffer.slice(offset, offset + maskLen) : null;
-      const payload = this._buffer.slice(offset + maskLen, totalLen);
-
-      if (masked) {
-        for (let i = 0; i < payload.length; i++) {
-          payload[i] ^= maskKey[i % 4];
-        }
-      }
-
-      this._buffer = this._buffer.slice(totalLen);
-
-      if (opcode === 0x08) {
-        this.readyState = 3;
-        this.socket.end();
-        if (this._onClose) this._onClose();
-        return;
-      }
-      if (opcode === 0x09) { // ping
-        const pong = Buffer.alloc(2);
-        pong[0] = 0x8a;
-        pong[1] = 0;
-        this.socket.write(pong);
-        continue;
-      }
-      if (opcode === 0x01 && this._onMessage) {
-        this._onMessage({ data: payload.toString('utf8') });
-      }
-    }
-  }
+function normalizeAnswer(str) {
+  return str.split(';').sort().join(';');
 }
 
 // ─── HTTP Server ────────────────────────────────────────────────────────────────
@@ -442,21 +322,18 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.on('upgrade', (req, socket, head) => {
-  const ws = acceptWebSocket(req, socket, head);
-  handleConnection(ws);
-});
+// ─── WebSocket Server ───────────────────────────────────────────────────────────
 
-// ─── Connection Handler ─────────────────────────────────────────────────────────
+const wss = new WebSocketServer({ server });
 
-function handleConnection(ws) {
+wss.on('connection', (ws) => {
   let currentRoom = null;
   let currentRole = null;
 
-  ws.onmessage = (event) => {
+  ws.on('message', (data) => {
     let msg;
     try {
-      msg = JSON.parse(event.data);
+      msg = JSON.parse(data.toString());
     } catch (_) { return; }
 
     switch (msg.type) {
@@ -473,13 +350,13 @@ function handleConnection(ws) {
       }
 
       case 'joinRoom': {
-        const room = rooms.get(msg.code.toUpperCase());
+        const room = rooms.get((msg.code || '').toUpperCase());
         if (!room) {
-          send(ws, { type: 'error', message: 'Room not found. Check the code and try again.' });
+          wsSend(ws, { type: 'error', message: 'Room not found. Check the code and try again.' });
           return;
         }
         if (room.players.A && room.players.B) {
-          send(ws, { type: 'error', message: 'Room is full.' });
+          wsSend(ws, { type: 'error', message: 'Room is full.' });
           return;
         }
         const role = room.players.A ? 'B' : 'A';
@@ -512,7 +389,6 @@ function handleConnection(ws) {
             correct = currentRoom.submissions.A === level.answer &&
                       currentRoom.submissions.B === level.answer;
           } else if (level.type === 'colorFilter') {
-            // Both must select the same full set of colored cells
             const a = normalizeAnswer(currentRoom.submissions.A);
             const b = normalizeAnswer(currentRoom.submissions.B);
             correct = a === normalizeAnswer(level.answer) && b === normalizeAnswer(level.answer);
@@ -537,7 +413,6 @@ function handleConnection(ws) {
             } else {
               currentRoom.state = 'levelComplete';
               broadcastResult(currentRoom, true, false);
-              // Auto-advance after a short delay
               setTimeout(() => {
                 if (currentRoom.state === 'levelComplete') {
                   startLevel(currentRoom);
@@ -545,7 +420,6 @@ function handleConnection(ws) {
               }, 3000);
             }
           } else {
-            // Wrong answer, let them retry
             currentRoom.submissions = {};
             broadcastResult(currentRoom, false, false);
             setTimeout(() => {
@@ -568,44 +442,24 @@ function handleConnection(ws) {
         break;
       }
     }
-  };
+  });
 
-  ws.onclose = () => {
+  ws.on('close', () => {
     if (currentRoom) {
       if (currentRoom.players[currentRole] === ws) {
         currentRoom.players[currentRole] = null;
         currentRoom.playerNames[currentRole] = null;
       }
-      // Notify partner
       const other = currentRole === 'A' ? 'B' : 'A';
       if (currentRoom.players[other]) {
-        send(currentRoom.players[other], { type: 'partnerDisconnected' });
+        wsSend(currentRoom.players[other], { type: 'partnerDisconnected' });
       }
-      // Clean up empty rooms
       if (!currentRoom.players.A && !currentRoom.players.B) {
         rooms.delete(currentRoom.code);
       }
     }
-  };
-}
-
-function normalizeAnswer(str) {
-  return str.split(';').sort().join(';');
-}
-
-function broadcastResult(room, correct, gameWon) {
-  for (const role of ['A', 'B']) {
-    const ws = room.players[role];
-    if (!ws) continue;
-    send(ws, {
-      type: 'result',
-      correct,
-      gameWon,
-      levelIndex: room.levelIndex,
-      totalLevels: room.levelOrder.length,
-    });
-  }
-}
+  });
+});
 
 // ─── Start ──────────────────────────────────────────────────────────────────────
 
@@ -624,16 +478,19 @@ function getLocalIP() {
 
 server.listen(PORT, '0.0.0.0', () => {
   const ip = getLocalIP();
-  console.log(`\n  ╔══════════════════════════════════════════╗`);
-  console.log(`  ║        🧩  HALF SENSE  🧩               ║`);
-  console.log(`  ║   Collaborative Puzzle Game Server       ║`);
-  console.log(`  ╠══════════════════════════════════════════╣`);
-  console.log(`  ║                                          ║`);
-  console.log(`  ║  Local:   http://localhost:${PORT}          ║`);
-  console.log(`  ║  Network: http://${ip}:${PORT}     ║`);
-  console.log(`  ║                                          ║`);
-  console.log(`  ║  Share the Network URL with your partner ║`);
-  console.log(`  ║  to play on the same WiFi network!       ║`);
-  console.log(`  ║                                          ║`);
-  console.log(`  ╚══════════════════════════════════════════╝\n`);
+  const pad = (s, n) => s + ' '.repeat(Math.max(0, n - s.length));
+  console.log('');
+  console.log('  ┌──────────────────────────────────────────┐');
+  console.log('  │         HALF SENSE                       │');
+  console.log('  │   Collaborative Puzzle Game Server        │');
+  console.log('  ├──────────────────────────────────────────┤');
+  console.log('  │                                          │');
+  console.log(`  │  Local:   ${pad('http://localhost:' + PORT, 29)}│`);
+  console.log(`  │  Network: ${pad('http://' + ip + ':' + PORT, 29)}│`);
+  console.log('  │                                          │');
+  console.log('  │  Share the Network URL with your partner │');
+  console.log('  │  to play on the same WiFi network!       │');
+  console.log('  │                                          │');
+  console.log('  └──────────────────────────────────────────┘');
+  console.log('');
 });
