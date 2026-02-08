@@ -13,6 +13,7 @@
     --accent2: #a29bfe;
     --success: #00b894;
     --error: #e17055;
+    --warn: #fdcb6e;
     --text: #dfe6e9;
     --text2: #b2bec3;
     --red: #ff6b6b;
@@ -20,157 +21,70 @@
     --green: #55efc4;
     --radius: 12px;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    overflow-x: hidden;
-    -webkit-tap-highlight-color: transparent;
+    background: var(--bg); color: var(--text);
+    min-height: 100dvh; display: flex; flex-direction: column;
+    overflow-x: hidden; -webkit-tap-highlight-color: transparent;
   }
 
   /* ─── Header ─── */
   header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--surface2);
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    background: var(--surface); border-bottom: 1px solid var(--surface2);
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
   }
-
-  .logo {
-    font-size: 1.3rem;
-    font-weight: 700;
-    letter-spacing: 1px;
+  .logo { font-size: 1.3rem; font-weight: 700; letter-spacing: 1px;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .status-pill {
-    font-size: 0.75rem;
-    padding: 4px 10px;
-    border-radius: 20px;
-    background: var(--surface2);
-    color: var(--text2);
-  }
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header-room { font-size: 0.7rem; color: var(--accent2); font-family: 'Courier New', monospace;
+    letter-spacing: 2px; font-weight: 700; display: none; }
+  .header-room.visible { display: block; }
+  .status-pill { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px;
+    background: var(--surface2); color: var(--text2); }
   .status-pill.connected { background: #00b89433; color: var(--success); }
 
   /* ─── Main ─── */
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    max-width: 500px;
-    margin: 0 auto;
-    width: 100%;
-  }
+  main { flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 20px; max-width: 500px; margin: 0 auto; width: 100%; }
 
   /* ─── Screens ─── */
   .screen { display: none; width: 100%; animation: fadeIn 0.3s ease; }
   .screen.active { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ─── Title Screen ─── */
+  /* ─── Common ─── */
   .title-icon { font-size: 3.5rem; margin-bottom: 4px; }
   .title-name { font-size: 2rem; font-weight: 800; letter-spacing: 2px; }
-  .title-sub { color: var(--text2); font-size: 0.9rem; text-align: center; max-width: 280px; line-height: 1.4; }
+  .title-sub { color: var(--text2); font-size: 0.9rem; text-align: center; max-width: 300px; line-height: 1.4; }
 
-  /* ─── Forms ─── */
-  input[type="text"] {
-    background: var(--surface2);
-    border: 2px solid transparent;
-    color: var(--text);
-    padding: 14px 16px;
-    border-radius: var(--radius);
-    font-size: 1rem;
-    width: 100%;
-    text-align: center;
-    transition: border-color 0.2s;
-    outline: none;
-  }
+  input[type="text"] { background: var(--surface2); border: 2px solid transparent; color: var(--text);
+    padding: 14px 16px; border-radius: var(--radius); font-size: 1rem; width: 100%;
+    text-align: center; transition: border-color 0.2s; outline: none; }
   input[type="text"]:focus { border-color: var(--accent); }
   input[type="text"]::placeholder { color: var(--text2); }
 
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    padding: 14px 28px;
-    border-radius: var(--radius);
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    width: 100%;
-    transition: transform 0.1s, opacity 0.2s;
-    -webkit-user-select: none;
-    user-select: none;
-  }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--accent); color: #fff; border: none; padding: 14px 28px;
+    border-radius: var(--radius); font-size: 1rem; font-weight: 600; cursor: pointer;
+    width: 100%; transition: transform 0.1s, opacity 0.2s;
+    -webkit-user-select: none; user-select: none; }
   .btn:active { transform: scale(0.97); }
   .btn:disabled { opacity: 0.4; pointer-events: none; }
   .btn.secondary { background: var(--surface2); color: var(--text2); }
   .btn.success { background: var(--success); }
-  .btn.small { padding: 10px 18px; font-size: 0.9rem; }
-
   .btn-row { display: flex; gap: 10px; width: 100%; }
   .btn-row .btn { flex: 1; }
 
-  .room-code-display {
-    font-size: 2.5rem;
-    font-weight: 800;
-    letter-spacing: 8px;
-    color: var(--accent2);
-    padding: 20px;
-    background: var(--surface);
-    border-radius: var(--radius);
-    text-align: center;
-    font-family: 'Courier New', monospace;
-  }
-
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    color: var(--text2);
-    font-size: 0.8rem;
-  }
-  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--surface2); }
+  .room-code-display { font-size: 2.5rem; font-weight: 800; letter-spacing: 8px;
+    color: var(--accent2); padding: 20px; background: var(--surface);
+    border-radius: var(--radius); text-align: center; font-family: 'Courier New', monospace; }
 
   /* ─── Lobby ─── */
-  .player-slots {
-    display: flex;
-    gap: 12px;
-    width: 100%;
-  }
-  .player-slot {
-    flex: 1;
-    padding: 16px;
-    border-radius: var(--radius);
-    background: var(--surface);
-    border: 2px solid var(--surface2);
-    text-align: center;
-  }
+  .player-slots { display: flex; gap: 12px; width: 100%; }
+  .player-slot { flex: 1; padding: 16px; border-radius: var(--radius); background: var(--surface);
+    border: 2px solid var(--surface2); text-align: center; }
   .player-slot.filled { border-color: var(--accent); }
   .player-slot.you { border-color: var(--success); }
   .player-slot .slot-label { font-size: 0.7rem; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
@@ -178,318 +92,143 @@
   .player-slot .slot-empty { color: var(--text2); font-style: italic; font-size: 0.9rem; margin-top: 4px; }
 
   /* ─── Game Screen ─── */
-  .level-header {
-    text-align: center;
-    width: 100%;
-  }
-  .level-badge {
-    display: inline-block;
-    background: var(--accent);
-    color: #fff;
-    padding: 4px 14px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-  .level-title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin-top: 8px;
-  }
-  .level-instructions {
-    color: var(--text2);
-    font-size: 0.85rem;
-    line-height: 1.5;
-    text-align: center;
-    max-width: 340px;
-  }
-
-  .hint-box {
-    background: var(--surface);
-    border-left: 3px solid var(--accent);
-    padding: 12px 16px;
-    border-radius: 0 var(--radius) var(--radius) 0;
-    font-size: 0.85rem;
-    color: var(--accent2);
-    width: 100%;
-  }
-
-  .partner-status {
-    font-size: 0.8rem;
-    color: var(--text2);
-    padding: 6px 14px;
-    background: var(--surface);
-    border-radius: 20px;
-  }
+  .level-header { text-align: center; width: 100%; }
+  .level-badge { display: inline-block; background: var(--accent); color: #fff;
+    padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase; }
+  .level-title { font-size: 1.4rem; font-weight: 700; margin-top: 8px; }
+  .level-instructions { color: var(--text2); font-size: 0.85rem; line-height: 1.5;
+    text-align: center; max-width: 340px; }
+  .hint-box { background: var(--surface); border-left: 3px solid var(--accent);
+    padding: 12px 16px; border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 0.85rem; color: var(--accent2); width: 100%; }
+  .partner-status { font-size: 0.8rem; color: var(--text2); padding: 6px 14px;
+    background: var(--surface); border-radius: 20px; }
   .partner-status.submitted { color: var(--success); background: #00b89422; }
 
-  /* ─── Level: Split Code ─── */
-  .code-display {
-    font-family: 'Courier New', monospace;
-    font-size: 2.2rem;
-    font-weight: 700;
-    letter-spacing: 10px;
-    text-align: center;
-    padding: 16px;
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-  }
-  .code-char {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 56px;
-    background: var(--surface);
-    border-radius: 8px;
-    border: 2px solid var(--surface2);
-  }
+  /* ─── Split Code ─── */
+  .code-display { font-family: 'Courier New', monospace; font-size: 2.2rem; font-weight: 700;
+    text-align: center; padding: 16px; display: flex; justify-content: center; gap: 4px; }
+  .code-char { display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 56px; background: var(--surface); border-radius: 8px; border: 2px solid var(--surface2); }
   .code-char.visible { color: var(--accent2); border-color: var(--accent); }
   .code-char.hidden { color: var(--text2); }
+  .code-input { font-family: 'Courier New', monospace; font-size: 1.5rem;
+    letter-spacing: 6px; font-weight: 700; text-transform: uppercase; }
 
-  .code-input {
-    font-family: 'Courier New', monospace;
-    font-size: 1.5rem;
-    letter-spacing: 6px;
-    font-weight: 700;
-  }
-
-  /* ─── Level: Color Filter ─── */
-  .grid-container {
-    display: grid;
-    gap: 6px;
-    width: 100%;
-    max-width: 320px;
-    margin: 0 auto;
-  }
-  .grid-cell {
-    aspect-ratio: 1;
-    border-radius: 8px;
-    border: 2px solid var(--surface2);
-    background: var(--surface);
-    cursor: pointer;
-    transition: transform 0.1s, border-color 0.15s;
-    position: relative;
-  }
+  /* ─── Color Filter ─── */
+  .grid-container { display: grid; gap: 6px; width: 100%; max-width: 320px; margin: 0 auto; }
+  .grid-cell { aspect-ratio: 1; border-radius: 8px; border: 2px solid var(--surface2);
+    background: var(--surface); cursor: pointer; transition: transform 0.1s, border-color 0.15s;
+    position: relative; }
   .grid-cell:active { transform: scale(0.9); }
   .grid-cell.selected { border-color: #fff; box-shadow: 0 0 12px rgba(255,255,255,0.2); }
-  .grid-cell.selected::after {
-    content: '✓';
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    color: #fff;
-    font-weight: bold;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-  }
+  .grid-cell.selected::after { content: '\2713'; position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    color: #fff; font-weight: bold; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
   .grid-cell.c-red { background: var(--red); }
   .grid-cell.c-blue { background: var(--blue); }
   .grid-cell.c-green { background: var(--green); }
   .grid-cell.c-none { background: var(--surface); }
 
-  /* ─── Level: Fragmented Map ─── */
-  .map-grid {
-    display: grid;
-    gap: 4px;
-    width: 100%;
-    max-width: 320px;
-    margin: 0 auto;
-  }
-  .map-cell {
-    aspect-ratio: 1;
-    border-radius: 6px;
-    border: 2px solid var(--surface2);
-    background: var(--surface);
-    cursor: pointer;
-    transition: transform 0.1s, background 0.15s;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    color: transparent;
-  }
-  .map-cell:active { transform: scale(0.9); }
-  .map-cell.path { background: var(--accent); border-color: var(--accent2); color: #fff; }
-  .map-cell.selected { background: var(--accent2); border-color: #fff; color: #fff; }
-  .map-cell.selected.path { background: var(--success); border-color: var(--success); }
+  /* ─── Shape Sequence ─── */
+  .shape-display { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .shape-slot { width: 52px; height: 58px; display: flex; align-items: center;
+    justify-content: center; background: var(--surface); border: 2px solid var(--surface2);
+    border-radius: 8px; }
+  .shape-slot.visible { border-color: var(--accent); }
+  .shape-slot.hidden { border-color: var(--surface2); }
+  .shape-slot svg { width: 36px; height: 36px; }
 
-  /* ─── Level: Symbol Sequence ─── */
-  .symbol-display {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .symbol-slot {
-    width: 48px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.6rem;
-    background: var(--surface);
-    border: 2px solid var(--surface2);
-    border-radius: 8px;
-  }
-  .symbol-slot.visible { border-color: var(--accent); }
-  .symbol-slot.hidden { color: var(--text2); font-size: 1.2rem; }
+  .shape-picker { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .shape-picker-btn { width: 50px; height: 50px; display: flex; align-items: center;
+    justify-content: center; background: var(--surface); border: 2px solid var(--surface2);
+    border-radius: 8px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
+  .shape-picker-btn:active { transform: scale(0.9); }
+  .shape-picker-btn svg { width: 32px; height: 32px; }
 
-  .symbol-picker {
-    display: flex;
-    gap: 6px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .symbol-picker-btn {
-    width: 46px;
-    height: 46px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    background: var(--surface);
-    border: 2px solid var(--surface2);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: border-color 0.15s, transform 0.1s;
-  }
-  .symbol-picker-btn:active { transform: scale(0.9); }
-  .symbol-picker-btn.active { border-color: var(--accent); background: var(--accent)33; }
+  .seq-input { display: flex; gap: 6px; justify-content: center; }
+  .seq-slot { width: 50px; height: 56px; display: flex; align-items: center;
+    justify-content: center; background: var(--surface2); border: 2px solid transparent;
+    border-radius: 8px; cursor: pointer; transition: border-color 0.15s; }
+  .seq-slot.active { border-color: var(--accent); }
+  .seq-slot.filled { border-color: var(--accent2); }
+  .seq-slot svg { width: 32px; height: 32px; }
 
-  .sequence-input {
-    display: flex;
-    gap: 6px;
-    justify-content: center;
-  }
-  .seq-input-slot {
-    width: 46px;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    background: var(--surface2);
-    border: 2px solid transparent;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: border-color 0.15s;
-  }
-  .seq-input-slot.active { border-color: var(--accent); }
-  .seq-input-slot.filled { border-color: var(--accent2); }
+  /* ─── Hazard Nav ─── */
+  .nav-grid { display: grid; gap: 3px; width: 100%; max-width: 300px; margin: 0 auto; }
+  .nav-cell { aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--surface2);
+    background: var(--surface); cursor: pointer; transition: transform 0.1s, background 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; font-weight: 700; color: transparent; position: relative; }
+  .nav-cell:active { transform: scale(0.9); }
+  .nav-cell.hazard-a { background: rgba(255,107,107,0.35); border-color: var(--red); }
+  .nav-cell.hazard-b { background: rgba(116,185,255,0.35); border-color: var(--blue); }
+  .nav-cell.start { background: var(--success); border-color: var(--success); color: #fff; }
+  .nav-cell.finish { background: var(--warn); border-color: var(--warn); color: #000; }
+  .nav-cell.on-path { background: var(--accent); border-color: var(--accent2); color: #fff; }
+  .nav-cell.on-path.start { background: var(--success); }
+  .nav-cell.on-path.finish { background: var(--warn); color: #000; }
+  .fuel-bar { display: flex; align-items: center; gap: 8px; font-size: 0.85rem;
+    color: var(--text2); width: 100%; max-width: 300px; margin: 0 auto; }
+  .fuel-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .fuel-fill { height: 100%; background: var(--success); transition: width 0.2s; }
+  .fuel-fill.low { background: var(--error); }
+  .move-hint { font-size: 0.75rem; color: var(--warn); text-align: center;
+    padding: 4px 10px; background: rgba(253,203,110,0.1); border-radius: 8px; }
 
-  /* ─── Level: Jigsaw Whisper ─── */
-  .word-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-  }
-  .word-chip {
-    background: var(--surface);
-    border: 2px solid var(--accent);
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-size: 0.9rem;
-  }
-  .word-chip .pos { font-size: 0.7rem; color: var(--text2); margin-right: 6px; }
-
-  .phrase-input {
-    font-size: 1rem;
-    letter-spacing: 1px;
-  }
+  /* ─── Clue Words ─── */
+  .clue-list { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .clue-item { background: var(--surface); border-radius: 8px; padding: 10px 14px;
+    display: flex; align-items: center; gap: 10px; }
+  .clue-num { font-size: 0.75rem; font-weight: 700; color: var(--accent2);
+    background: var(--surface2); border-radius: 50%; width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .clue-text { font-size: 0.85rem; color: var(--text); font-style: italic; }
+  .word-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .word-chip { background: var(--surface); border: 2px solid var(--accent);
+    border-radius: 8px; padding: 8px 14px; font-size: 0.95rem; font-weight: 600; }
+  .phrase-input { font-size: 1rem; letter-spacing: 1px; }
 
   /* ─── Results ─── */
-  .result-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 10, 26, 0.92);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.3s ease;
-  }
+  .result-overlay { display: none; position: fixed; inset: 0;
+    background: rgba(10, 10, 26, 0.92); z-index: 200;
+    align-items: center; justify-content: center; animation: fadeIn 0.3s ease; }
   .result-overlay.active { display: flex; }
-  .result-card {
-    background: var(--surface);
-    border-radius: 20px;
-    padding: 32px;
-    text-align: center;
-    max-width: 340px;
-    width: 90%;
-  }
+  .result-card { background: var(--surface); border-radius: 20px; padding: 32px;
+    text-align: center; max-width: 340px; width: 90%; }
   .result-icon { font-size: 3rem; margin-bottom: 12px; }
   .result-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
   .result-sub { color: var(--text2); font-size: 0.9rem; margin-bottom: 20px; }
 
-  /* ─── Progress Bar ─── */
-  .progress-bar {
-    width: 100%;
-    height: 4px;
-    background: var(--surface2);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--success));
-    transition: width 0.5s ease;
-  }
+  /* ─── Progress ─── */
+  .progress-bar { width: 100%; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--success)); transition: width 0.5s ease; }
 
-  /* ─── Disconnect ─── */
-  .disconnect-banner {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: var(--error);
-    color: #fff;
-    text-align: center;
-    padding: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    z-index: 300;
-  }
+  /* ─── Banners ─── */
+  .disconnect-banner { display: none; position: fixed; top: 0; left: 0; right: 0;
+    background: var(--error); color: #fff; text-align: center; padding: 10px;
+    font-size: 0.85rem; font-weight: 600; z-index: 300; }
   .disconnect-banner.active { display: block; }
-
-  /* ─── Error Toast ─── */
-  .toast {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--error);
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: var(--radius);
-    font-size: 0.85rem;
-    z-index: 300;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-  }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--error); color: #fff; padding: 12px 20px; border-radius: var(--radius);
+    font-size: 0.85rem; z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .toast.active { opacity: 1; }
+  .label { font-size: 0.8rem; color: var(--text2); text-align: center; margin-top: 8px; }
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">HALF SENSE</div>
+  <div class="header-room" id="headerRoom"></div>
   <div class="status-pill" id="statusPill">Disconnected</div>
 </header>
 
-<div class="disconnect-banner" id="disconnectBanner">Partner disconnected. Waiting for reconnection...</div>
+<div class="disconnect-banner" id="disconnectBanner">Partner disconnected. They can rejoin with the room code.</div>
 
 <main>
-  <!-- ─── Title Screen ─── -->
+  <!-- Title -->
   <div class="screen active" id="screenTitle">
     <div class="title-icon">&#129513;</div>
     <div class="title-name">HALF SENSE</div>
@@ -501,37 +240,36 @@
     </div>
   </div>
 
-  <!-- ─── Join Screen ─── -->
+  <!-- Join -->
   <div class="screen" id="screenJoin">
     <div class="title-icon">&#128279;</div>
     <div style="font-size:1.2rem;font-weight:600;">Join a Room</div>
     <div class="title-sub">Enter the 4-character room code shown on your partner's screen.</div>
-    <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="4" autocomplete="off" style="text-transform:uppercase;letter-spacing:6px;font-size:1.4rem;font-weight:700;">
+    <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="4" autocomplete="off"
+      style="text-transform:uppercase;letter-spacing:6px;font-size:1.4rem;font-weight:700;">
     <div class="btn-row">
       <button class="btn secondary" id="btnJoinBack">Back</button>
       <button class="btn" id="btnJoin">Join</button>
     </div>
   </div>
 
-  <!-- ─── Lobby Screen ─── -->
+  <!-- Lobby -->
   <div class="screen" id="screenLobby">
     <div style="font-size:0.8rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;">Room Code</div>
     <div class="room-code-display" id="lobbyRoomCode">----</div>
     <div class="title-sub">Share this code with your partner so they can join.</div>
     <div class="player-slots">
       <div class="player-slot" id="slotA">
-        <div class="slot-label">Player 1</div>
-        <div class="slot-empty">Waiting...</div>
+        <div class="slot-label">Player 1</div><div class="slot-empty">Waiting...</div>
       </div>
       <div class="player-slot" id="slotB">
-        <div class="slot-label">Player 2</div>
-        <div class="slot-empty">Waiting...</div>
+        <div class="slot-label">Player 2</div><div class="slot-empty">Waiting...</div>
       </div>
     </div>
     <button class="btn success" id="btnStart" disabled>Both players needed to start</button>
   </div>
 
-  <!-- ─── Game Screen ─── -->
+  <!-- Game -->
   <div class="screen" id="screenGame">
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
     <div class="level-header">
@@ -545,7 +283,7 @@
     <button class="btn" id="btnSubmit">Submit Answer</button>
   </div>
 
-  <!-- ─── Game Complete Screen ─── -->
+  <!-- Win -->
   <div class="screen" id="screenWin">
     <div style="font-size:4rem;">&#127881;</div>
     <div style="font-size:1.8rem;font-weight:800;">You Win!</div>
@@ -556,26 +294,38 @@
 
 <div class="result-overlay" id="resultOverlay">
   <div class="result-card">
-    <div class="result-icon" id="resultIcon">&#10004;</div>
+    <div class="result-icon" id="resultIcon"></div>
     <div class="result-title" id="resultTitle">Correct!</div>
     <div class="result-sub" id="resultSub">Moving to the next level...</div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-// ─── State ──────────────────────────────────────────────────────────────────────
+// ─── Shape SVG Definitions ──────────────────────────────────────────────────────
+const SHAPE_SVGS = {
+  solidCircle: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="#a0845c"/></svg>',
+  hollowStar: '<svg viewBox="0 0 40 40"><polygon points="20,3 24.5,14 36,14.5 27,22.5 30,34 20,27 10,34 13,22.5 4,14.5 15.5,14" fill="none" stroke="#d0d0d0" stroke-width="2"/></svg>',
+  crescent: '<svg viewBox="0 0 40 40"><path d="M25 5 A15 15 0 1 0 25 35 A11 11 0 1 1 25 5Z" fill="#c0c8d0"/></svg>',
+  spikeBall: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="8" fill="#d0d0d0"/><polygon points="20,2 22,12 18,12" fill="#d0d0d0"/><polygon points="20,38 22,28 18,28" fill="#d0d0d0"/><polygon points="2,20 12,18 12,22" fill="#d0d0d0"/><polygon points="38,20 28,18 28,22" fill="#d0d0d0"/><polygon points="7,7 14,13 11,15" fill="#d0d0d0"/><polygon points="33,7 27,13 29,15" fill="#d0d0d0"/><polygon points="7,33 14,27 11,25" fill="#d0d0d0"/><polygon points="33,33 27,27 29,25" fill="#d0d0d0"/></svg>',
+  halfDiamond: '<svg viewBox="0 0 40 40"><polygon points="20,4 36,20 20,36 4,20" fill="none" stroke="#d0d0d0" stroke-width="2"/><polygon points="20,4 36,20 4,20" fill="#d0d0d0"/></svg>',
+  thickArrow: '<svg viewBox="0 0 40 40"><path d="M20 3 L33 18 L26 18 L26 37 L14 37 L14 18 L7 18 Z" fill="#d0d0d0"/></svg>',
+  bolt: '<svg viewBox="0 0 40 40"><polygon points="24,2 12,20 19,20 15,38 30,16 22,16 28,2" fill="#d0d0d0"/></svg>',
+  droplet: '<svg viewBox="0 0 40 40"><path d="M20 4 C20 4 33 18 33 25 C33 32 27 37 20 37 C13 37 7 32 7 25 C7 18 20 4 20 4Z" fill="#d0d0d0"/></svg>',
+};
 
+function shapeSvg(id) { return SHAPE_SVGS[id] || ''; }
+
+// ─── State ──────────────────────────────────────────────────────────────────────
 let ws = null;
 let myRole = null;
+let myRoomCode = null;
+let myName = null;
 let currentLevelType = null;
-let selectedCells = new Set();   // for grid-based levels
-let selectedPath = [];           // for map level
-let symbolAnswer = [];           // for symbol level
-let activeSymbolSlot = 0;
-
-// ─── DOM ────────────────────────────────────────────────────────────────────────
+let selectedCells = new Set();
+let navPath = [];
+let shapeAnswer = [];
+let activeShapeSlot = 0;
 
 const $ = id => document.getElementById(id);
 const screens = document.querySelectorAll('.screen');
@@ -585,7 +335,6 @@ function showScreen(id) {
 }
 
 // ─── WebSocket ──────────────────────────────────────────────────────────────────
-
 function connect() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   ws = new WebSocket(`${proto}://${location.host}`);
@@ -593,6 +342,12 @@ function connect() {
   ws.onopen = () => {
     $('statusPill').textContent = 'Connected';
     $('statusPill').classList.add('connected');
+    // Try to rejoin if we have stored session
+    const storedCode = sessionStorage.getItem('hs_room');
+    const storedName = sessionStorage.getItem('hs_name');
+    if (storedCode && storedName) {
+      sendMsg({ type: 'rejoinRoom', code: storedCode, name: storedName });
+    }
   };
 
   ws.onclose = () => {
@@ -608,33 +363,32 @@ function connect() {
 }
 
 function sendMsg(obj) {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(obj));
-  }
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
 }
 
 // ─── Message Handler ────────────────────────────────────────────────────────────
-
 function handleMessage(msg) {
   switch (msg.type) {
     case 'lobby':
       myRole = msg.role;
+      myRoomCode = msg.roomCode;
+      sessionStorage.setItem('hs_room', msg.roomCode);
+      sessionStorage.setItem('hs_name', msg.playerName);
       showScreen('screenLobby');
+      setHeaderRoom(msg.roomCode);
       $('lobbyRoomCode').textContent = msg.roomCode;
       renderSlot('slotA', msg.role === 'A' ? msg.playerName : msg.partnerName, msg.role === 'A');
       renderSlot('slotB', msg.role === 'B' ? msg.playerName : msg.partnerName, msg.role === 'B');
-      if (msg.ready) {
-        $('btnStart').disabled = false;
-        $('btnStart').textContent = 'Start Game';
-      } else {
-        $('btnStart').disabled = true;
-        $('btnStart').textContent = 'Waiting for partner...';
-      }
+      $('btnStart').disabled = !msg.ready;
+      $('btnStart').textContent = msg.ready ? 'Start Game' : 'Waiting for partner...';
       break;
 
     case 'gameState':
       if (msg.state === 'playing') {
         myRole = msg.role;
+        myRoomCode = msg.roomCode;
+        sessionStorage.setItem('hs_room', msg.roomCode);
+        setHeaderRoom(msg.roomCode);
         showScreen('screenGame');
         renderLevel(msg);
       }
@@ -646,7 +400,17 @@ function handleMessage(msg) {
 
     case 'partnerDisconnected':
       $('disconnectBanner').classList.add('active');
-      setTimeout(() => $('disconnectBanner').classList.remove('active'), 5000);
+      break;
+
+    case 'partnerReconnected':
+      $('disconnectBanner').classList.remove('active');
+      showToast('Partner reconnected!');
+      break;
+
+    case 'rejoinFailed':
+      sessionStorage.removeItem('hs_room');
+      sessionStorage.removeItem('hs_name');
+      showScreen('screenTitle');
       break;
 
     case 'error':
@@ -655,34 +419,34 @@ function handleMessage(msg) {
   }
 }
 
-// ─── Lobby Rendering ────────────────────────────────────────────────────────────
+function setHeaderRoom(code) {
+  const el = $('headerRoom');
+  el.textContent = 'ROOM: ' + code;
+  el.classList.add('visible');
+}
 
+// ─── Lobby ──────────────────────────────────────────────────────────────────────
 function renderSlot(slotId, name, isYou) {
   const slot = $(slotId);
   slot.className = 'player-slot';
   if (name) {
     slot.classList.add('filled');
     if (isYou) slot.classList.add('you');
-    slot.innerHTML = `
-      <div class="slot-label">${isYou ? 'You' : 'Partner'}</div>
-      <div class="slot-name">${escHtml(name)}</div>
-    `;
+    slot.innerHTML = `<div class="slot-label">${isYou ? 'You' : 'Partner'}</div>
+      <div class="slot-name">${esc(name)}</div>`;
   } else {
-    slot.innerHTML = `
-      <div class="slot-label">${slotId === 'slotA' ? 'Player 1' : 'Player 2'}</div>
-      <div class="slot-empty">Waiting...</div>
-    `;
+    slot.innerHTML = `<div class="slot-label">${slotId === 'slotA' ? 'Player 1' : 'Player 2'}</div>
+      <div class="slot-empty">Waiting...</div>`;
   }
 }
 
 // ─── Level Rendering ────────────────────────────────────────────────────────────
-
 const LEVEL_NAMES = {
   splitCode: 'Split Code',
   colorFilter: 'Color Filter',
-  fragmentedMap: 'Fragmented Map',
-  symbolSequence: 'Symbol Sequence',
-  jigsawWhisper: 'Jigsaw Whisper',
+  shapeSequence: 'Strange Shapes',
+  hazardNav: 'Hazard Navigation',
+  clueWords: 'Clue Master',
 };
 
 function renderLevel(msg) {
@@ -705,191 +469,106 @@ function renderLevel(msg) {
     $('partnerStatus').classList.remove('submitted');
   }
 
-  const container = $('levelContent');
-  container.innerHTML = '';
+  const c = $('levelContent');
+  c.innerHTML = '';
 
   switch (level.type) {
-    case 'splitCode': renderSplitCode(container, level.view); break;
-    case 'colorFilter': renderColorFilter(container, level.view); break;
-    case 'fragmentedMap': renderFragmentedMap(container, level.view); break;
-    case 'symbolSequence': renderSymbolSequence(container, level.view); break;
-    case 'jigsawWhisper': renderJigsawWhisper(container, level.view); break;
+    case 'splitCode': renderSplitCode(c, level.view); break;
+    case 'colorFilter': renderColorFilter(c, level.view); break;
+    case 'shapeSequence': renderShapeSequence(c, level.view); break;
+    case 'hazardNav': renderHazardNav(c, level.view); break;
+    case 'clueWords': renderClueWords(c, level.view); break;
   }
 }
 
 // ── Split Code ──
-function renderSplitCode(container, view) {
-  const codeDisp = document.createElement('div');
-  codeDisp.className = 'code-display';
+function renderSplitCode(c, view) {
+  const disp = el('div', 'code-display');
   for (const ch of view.code) {
-    const span = document.createElement('div');
-    span.className = 'code-char ' + (ch !== '_' ? 'visible' : 'hidden');
-    span.textContent = ch;
-    codeDisp.appendChild(span);
+    const s = el('div', 'code-char ' + (ch !== '_' ? 'visible' : 'hidden'));
+    s.textContent = ch;
+    disp.appendChild(s);
   }
-  container.appendChild(codeDisp);
-
-  const label = document.createElement('div');
-  label.style.cssText = 'font-size:0.8rem;color:var(--text2);text-align:center;margin-top:8px;';
-  label.textContent = 'Enter the full code (combine your digits with your partner\'s):';
-  container.appendChild(label);
-
+  c.appendChild(disp);
+  c.appendChild(mkLabel('Enter the full code (your characters + your partner\'s):'));
   const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'code-input';
-  input.id = 'splitCodeAnswer';
-  input.maxLength = view.code.length;
-  input.placeholder = '_'.repeat(view.code.length);
-  input.inputMode = 'numeric';
-  input.autocomplete = 'off';
-  container.appendChild(input);
+  input.type = 'text'; input.className = 'code-input'; input.id = 'splitCodeAnswer';
+  input.maxLength = view.code.length; input.placeholder = '_'.repeat(view.code.length);
+  input.autocomplete = 'off'; input.style.textTransform = 'uppercase';
+  c.appendChild(input);
 }
 
 // ── Color Filter ──
-function renderColorFilter(container, view) {
+function renderColorFilter(c, view) {
   selectedCells = new Set();
   const grid = view.grid;
   const size = grid.length;
-
-  const gridEl = document.createElement('div');
-  gridEl.className = 'grid-container';
-  gridEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-
+  const g = el('div', 'grid-container');
+  g.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+  // Add row/col labels
   for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      const cell = document.createElement('div');
-      cell.className = `grid-cell c-${grid[r][c]}`;
-      cell.dataset.pos = `${r},${c}`;
+    for (let col = 0; col < size; col++) {
+      const cell = el('div', `grid-cell c-${grid[r][col]}`);
+      cell.dataset.pos = `${r},${col}`;
       cell.addEventListener('click', () => {
-        const key = `${r},${c}`;
-        if (selectedCells.has(key)) {
-          selectedCells.delete(key);
-          cell.classList.remove('selected');
-        } else {
-          selectedCells.add(key);
-          cell.classList.add('selected');
-        }
+        const key = `${r},${col}`;
+        if (selectedCells.has(key)) { selectedCells.delete(key); cell.classList.remove('selected'); }
+        else { selectedCells.add(key); cell.classList.add('selected'); }
       });
-      gridEl.appendChild(cell);
+      g.appendChild(cell);
     }
   }
-  container.appendChild(gridEl);
-
-  const label = document.createElement('div');
-  label.style.cssText = 'font-size:0.8rem;color:var(--text2);text-align:center;margin-top:8px;';
-  label.textContent = 'Tap ALL colored cells (including ones your partner describes to you):';
-  container.appendChild(label);
+  c.appendChild(g);
+  c.appendChild(mkLabel('Tap ALL colored cells (yours AND the ones your partner describes):'));
 }
 
-// ── Fragmented Map ──
-function renderFragmentedMap(container, view) {
-  selectedPath = [];
-  const size = view.size;
-  const pathSet = new Set(view.path);
+// ── Shape Sequence ──
+function renderShapeSequence(c, view) {
+  const allShapes = view.allShapes;
+  shapeAnswer = new Array(view.sequence.length).fill('');
+  activeShapeSlot = 0;
 
-  const gridEl = document.createElement('div');
-  gridEl.className = 'map-grid';
-  gridEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      const cell = document.createElement('div');
-      const key = `${r},${c}`;
-      cell.className = 'map-cell';
-      if (pathSet.has(key)) cell.classList.add('path');
-      cell.dataset.pos = key;
-      cell.textContent = pathSet.has(key) ? (view.path.indexOf(key) + 1) : '';
-      cell.addEventListener('click', () => {
-        const idx = selectedPath.indexOf(key);
-        if (idx >= 0) {
-          selectedPath.splice(idx, 1);
-          cell.classList.remove('selected');
-        } else {
-          selectedPath.push(key);
-          cell.classList.add('selected');
-        }
-        // Update numbers on selected cells
-        gridEl.querySelectorAll('.map-cell.selected').forEach(c2 => {
-          const i = selectedPath.indexOf(c2.dataset.pos);
-          if (i >= 0 && !c2.classList.contains('path')) {
-            c2.textContent = '';
-          }
-        });
-      });
-      gridEl.appendChild(cell);
-    }
-  }
-  container.appendChild(gridEl);
-
-  const label = document.createElement('div');
-  label.style.cssText = 'font-size:0.8rem;color:var(--text2);text-align:center;margin-top:8px;';
-  label.textContent = 'You see part of the path (highlighted). Tap to select the FULL path including your partner\'s cells:';
-  container.appendChild(label);
-}
-
-// ── Symbol Sequence ──
-function renderSymbolSequence(container, view) {
-  const symbols = view.symbols;
-  symbolAnswer = new Array(view.sequence.length).fill('');
-  activeSymbolSlot = 0;
-
-  // Show what they can see
-  const display = document.createElement('div');
-  display.className = 'symbol-display';
+  // Display what they can see
+  const disp = el('div', 'shape-display');
   view.sequence.forEach((s, i) => {
-    const slot = document.createElement('div');
-    slot.className = 'symbol-slot ' + (s !== '?' ? 'visible' : 'hidden');
-    slot.textContent = s;
-    display.appendChild(slot);
+    const slot = el('div', 'shape-slot ' + (s !== '?' ? 'visible' : 'hidden'));
+    slot.innerHTML = s !== '?' ? shapeSvg(s) : '<span style="color:var(--text2);font-size:1.4rem">?</span>';
+    disp.appendChild(slot);
   });
-  container.appendChild(display);
+  c.appendChild(disp);
 
-  const label = document.createElement('div');
-  label.style.cssText = 'font-size:0.8rem;color:var(--text2);text-align:center;margin:10px 0 4px;';
-  label.textContent = 'Build the full sequence (tap a slot, then pick a symbol):';
-  container.appendChild(label);
+  c.appendChild(mkLabel('Build the full sequence (tap a slot, then pick a shape):'));
 
   // Input slots
-  const seqInput = document.createElement('div');
-  seqInput.className = 'sequence-input';
-  seqInput.id = 'seqInput';
+  const seqDiv = el('div', 'seq-input'); seqDiv.id = 'seqInput';
   view.sequence.forEach((s, i) => {
-    const slot = document.createElement('div');
-    slot.className = 'seq-input-slot';
+    const slot = el('div', 'seq-slot');
     slot.dataset.index = i;
-    if (s !== '?') {
-      symbolAnswer[i] = s;
-      slot.textContent = s;
-      slot.classList.add('filled');
-    }
-    if (i === activeSymbolSlot) slot.classList.add('active');
+    if (s !== '?') { shapeAnswer[i] = s; slot.innerHTML = shapeSvg(s); slot.classList.add('filled'); }
+    if (i === activeShapeSlot) slot.classList.add('active');
     slot.addEventListener('click', () => {
-      activeSymbolSlot = i;
-      seqInput.querySelectorAll('.seq-input-slot').forEach((sl, j) => {
-        sl.classList.toggle('active', j === i);
-      });
+      activeShapeSlot = i;
+      seqDiv.querySelectorAll('.seq-slot').forEach((sl, j) => sl.classList.toggle('active', j === i));
     });
-    seqInput.appendChild(slot);
+    seqDiv.appendChild(slot);
   });
-  container.appendChild(seqInput);
+  c.appendChild(seqDiv);
 
-  // Symbol picker
-  const picker = document.createElement('div');
-  picker.className = 'symbol-picker';
-  symbols.forEach(sym => {
-    const btn = document.createElement('div');
-    btn.className = 'symbol-picker-btn';
-    btn.textContent = sym;
+  // Picker
+  const picker = el('div', 'shape-picker');
+  allShapes.forEach(id => {
+    const btn = el('div', 'shape-picker-btn');
+    btn.innerHTML = shapeSvg(id);
     btn.addEventListener('click', () => {
-      symbolAnswer[activeSymbolSlot] = sym;
-      const slots = seqInput.querySelectorAll('.seq-input-slot');
-      slots[activeSymbolSlot].textContent = sym;
-      slots[activeSymbolSlot].classList.add('filled');
-      // Auto-advance to next empty
-      for (let n = 1; n <= symbolAnswer.length; n++) {
-        const next = (activeSymbolSlot + n) % symbolAnswer.length;
-        if (!symbolAnswer[next]) {
-          activeSymbolSlot = next;
+      shapeAnswer[activeShapeSlot] = id;
+      const slots = seqDiv.querySelectorAll('.seq-slot');
+      slots[activeShapeSlot].innerHTML = shapeSvg(id);
+      slots[activeShapeSlot].classList.add('filled');
+      // Auto-advance
+      for (let n = 1; n <= shapeAnswer.length; n++) {
+        const next = (activeShapeSlot + n) % shapeAnswer.length;
+        if (!shapeAnswer[next]) {
+          activeShapeSlot = next;
           slots.forEach((sl, j) => sl.classList.toggle('active', j === next));
           break;
         }
@@ -897,67 +576,174 @@ function renderSymbolSequence(container, view) {
     });
     picker.appendChild(btn);
   });
-  container.appendChild(picker);
+  c.appendChild(picker);
 }
 
-// ── Jigsaw Whisper ──
-function renderJigsawWhisper(container, view) {
-  const chips = document.createElement('div');
-  chips.className = 'word-chips';
-  view.words.forEach(w => {
-    const chip = document.createElement('div');
-    chip.className = 'word-chip';
-    chip.innerHTML = `<span class="pos">#${w.pos}</span>${escHtml(w.word)}`;
-    chips.appendChild(chip);
-  });
-  container.appendChild(chips);
+// ── Hazard Nav ──
+function renderHazardNav(c, view) {
+  navPath = ['0,0']; // Start on start cell
+  const size = view.size;
+  const fuel = view.fuel;
+  const hazardSet = new Set(view.hazards);
+  const finish = `${size - 1},${size - 1}`;
+  const isPlayerA = myRole === 'A';
 
-  const label = document.createElement('div');
-  label.style.cssText = 'font-size:0.8rem;color:var(--text2);text-align:center;margin-top:12px;';
-  label.textContent = `Reconstruct the full ${view.total}-word phrase. Combine your words with your partner's:`;
-  container.appendChild(label);
+  const gridEl = el('div', 'nav-grid');
+  gridEl.id = 'navGrid';
+  gridEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+  for (let r = 0; r < size; r++) {
+    for (let col = 0; col < size; col++) {
+      const cell = el('div', 'nav-cell');
+      const key = `${r},${col}`;
+      cell.dataset.pos = key;
+      if (key === '0,0') { cell.classList.add('start'); cell.textContent = 'S'; cell.style.color = '#fff'; }
+      else if (key === finish) { cell.classList.add('finish'); cell.textContent = 'F'; cell.style.color = '#000'; }
+      if (hazardSet.has(key)) cell.classList.add(isPlayerA ? 'hazard-a' : 'hazard-b');
+
+      cell.addEventListener('click', () => {
+        const lastCell = navPath[navPath.length - 1];
+        if (key === lastCell) {
+          // Undo last step
+          if (navPath.length > 1) {
+            navPath.pop();
+            refreshNavGrid(size, hazardSet, fuel, finish, isPlayerA);
+          }
+          return;
+        }
+        // Check adjacency
+        const [lr, lc] = lastCell.split(',').map(Number);
+        const [cr, cc] = key.split(',').map(Number);
+        const dr = cr - lr, dc = cc - lc;
+        if (Math.abs(dr) + Math.abs(dc) !== 1) return;
+        // Check alternating constraint
+        const moveNum = navPath.length - 1;
+        const mustBeHorizontal = moveNum % 2 === 0;
+        if (mustBeHorizontal && dr !== 0) return;
+        if (!mustBeHorizontal && dc !== 0) return;
+        // Check fuel
+        if (navPath.length - 1 >= fuel) return;
+        // Check not revisiting
+        if (navPath.includes(key)) return;
+        navPath.push(key);
+        refreshNavGrid(size, hazardSet, fuel, finish, isPlayerA);
+      });
+      gridEl.appendChild(cell);
+    }
+  }
+  c.appendChild(gridEl);
+
+  // Fuel bar
+  const fuelDiv = el('div', 'fuel-bar'); fuelDiv.id = 'fuelBar';
+  fuelDiv.innerHTML = `<span>Fuel:</span><div class="fuel-track"><div class="fuel-fill" id="fuelFill" style="width:100%"></div></div><span id="fuelCount">${fuel}/${fuel}</span>`;
+  c.appendChild(fuelDiv);
+
+  // Move hint
+  const hint = el('div', 'move-hint'); hint.id = 'moveHint';
+  hint.textContent = 'Next move: HORIZONTAL (left/right)';
+  c.appendChild(hint);
+
+  // Undo button
+  const undoBtn = el('button', 'btn secondary'); undoBtn.id = 'btnUndo';
+  undoBtn.textContent = 'Undo Last Step';
+  undoBtn.style.marginTop = '4px';
+  undoBtn.addEventListener('click', () => {
+    if (navPath.length > 1) { navPath.pop(); refreshNavGrid(size, hazardSet, fuel, finish, isPlayerA); }
+  });
+  c.appendChild(undoBtn);
+
+  refreshNavGrid(size, hazardSet, fuel, finish, isPlayerA);
+}
+
+function refreshNavGrid(size, hazardSet, fuel, finish, isPlayerA) {
+  const pathSet = new Set(navPath);
+  const grid = $('navGrid');
+  if (!grid) return;
+  const cells = grid.querySelectorAll('.nav-cell');
+  cells.forEach(cell => {
+    const key = cell.dataset.pos;
+    cell.classList.remove('on-path');
+    if (pathSet.has(key)) cell.classList.add('on-path');
+    // Show step number on path cells
+    const idx = navPath.indexOf(key);
+    if (idx > 0 && key !== '0,0' && key !== finish) {
+      cell.textContent = idx;
+      cell.style.color = '#fff';
+    } else if (key === '0,0') {
+      cell.textContent = 'S'; cell.style.color = '#fff';
+    } else if (key === finish) {
+      cell.textContent = 'F'; cell.style.color = pathSet.has(key) ? '#000' : '#000';
+    } else {
+      cell.textContent = '';
+      cell.style.color = 'transparent';
+    }
+  });
+
+  const movesUsed = navPath.length - 1;
+  const remaining = fuel - movesUsed;
+  const pct = (remaining / fuel) * 100;
+  const ff = $('fuelFill');
+  if (ff) {
+    ff.style.width = pct + '%';
+    ff.classList.toggle('low', remaining <= 3);
+  }
+  const fc = $('fuelCount');
+  if (fc) fc.textContent = `${remaining}/${fuel}`;
+
+  const mh = $('moveHint');
+  if (mh) {
+    const nextParity = movesUsed % 2;
+    mh.textContent = nextParity === 0
+      ? 'Next move: HORIZONTAL (left/right)'
+      : 'Next move: VERTICAL (up/down)';
+  }
+}
+
+// ── Clue Words ──
+function renderClueWords(c, view) {
+  if (view.clues) {
+    // Player A: show clues
+    const list = el('div', 'clue-list');
+    view.clues.forEach(cl => {
+      const item = el('div', 'clue-item');
+      item.innerHTML = `<div class="clue-num">${cl.slot}</div><div class="clue-text">${esc(cl.clue)}</div>`;
+      list.appendChild(item);
+    });
+    c.appendChild(list);
+    c.appendChild(mkLabel(`Read these clues to your partner. They have the ${view.totalWords} words. Together, figure out the phrase:`));
+  } else {
+    // Player B: show words
+    const chips = el('div', 'word-chips');
+    view.words.forEach(w => {
+      const chip = el('div', 'word-chip');
+      chip.textContent = w;
+      chips.appendChild(chip);
+    });
+    c.appendChild(chips);
+    c.appendChild(mkLabel(`You have ${view.totalWords} words. Your partner has clues for each position. Listen and arrange them:`));
+  }
 
   const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'phrase-input';
-  input.id = 'jigsawAnswer';
-  input.placeholder = 'type the full phrase here...';
-  input.autocomplete = 'off';
-  container.appendChild(input);
+  input.type = 'text'; input.className = 'phrase-input'; input.id = 'clueAnswer';
+  input.placeholder = 'type the full phrase here...'; input.autocomplete = 'off';
+  c.appendChild(input);
 }
 
-// ─── Submission ─────────────────────────────────────────────────────────────────
-
+// ─── Answer Getters ─────────────────────────────────────────────────────────────
 function getAnswer() {
   switch (currentLevelType) {
-    case 'splitCode': {
-      const val = $('splitCodeAnswer')?.value || '';
-      return val.trim();
-    }
-    case 'colorFilter': {
-      return Array.from(selectedCells).sort().join(';');
-    }
-    case 'fragmentedMap': {
-      return selectedPath.join(';');
-    }
-    case 'symbolSequence': {
-      return symbolAnswer.join('');
-    }
-    case 'jigsawWhisper': {
-      return ($('jigsawAnswer')?.value || '').trim();
-    }
+    case 'splitCode': return ($('splitCodeAnswer')?.value || '').trim().toUpperCase();
+    case 'colorFilter': return Array.from(selectedCells).sort().join(';');
+    case 'shapeSequence': return shapeAnswer.join(',');
+    case 'hazardNav': return navPath.join(';');
+    case 'clueWords': return ($('clueAnswer')?.value || '').trim();
     default: return '';
   }
 }
 
 // ─── Results ────────────────────────────────────────────────────────────────────
-
 function showResult(msg) {
-  if (msg.gameWon) {
-    showScreen('screenWin');
-    return;
-  }
-
+  if (msg.gameWon) { showScreen('screenWin'); return; }
   const overlay = $('resultOverlay');
   if (msg.correct) {
     $('resultIcon').textContent = '\u2714\uFE0F';
@@ -979,64 +765,43 @@ function showToast(text) {
   setTimeout(() => t.classList.remove('active'), 3000);
 }
 
-// ─── Utility ────────────────────────────────────────────────────────────────────
-
-function escHtml(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
+// ─── Helpers ────────────────────────────────────────────────────────────────────
+function el(tag, cls) { const e = document.createElement(tag); if (cls) e.className = cls; return e; }
+function mkLabel(text) { const l = el('div', 'label'); l.textContent = text; return l; }
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 // ─── Event Bindings ─────────────────────────────────────────────────────────────
-
 $('btnCreate').addEventListener('click', () => {
-  const name = $('nameInput').value.trim() || 'Player 1';
-  sendMsg({ type: 'createRoom', name });
+  myName = $('nameInput').value.trim() || 'Player 1';
+  sessionStorage.setItem('hs_name', myName);
+  sendMsg({ type: 'createRoom', name: myName });
 });
 
-$('btnJoinShow').addEventListener('click', () => {
-  showScreen('screenJoin');
-});
-
-$('btnJoinBack').addEventListener('click', () => {
-  showScreen('screenTitle');
-});
+$('btnJoinShow').addEventListener('click', () => showScreen('screenJoin'));
+$('btnJoinBack').addEventListener('click', () => showScreen('screenTitle'));
 
 $('btnJoin').addEventListener('click', () => {
-  const name = $('nameInput').value.trim() || 'Player 2';
+  myName = $('nameInput').value.trim() || 'Player 2';
   const code = $('roomCodeInput').value.trim().toUpperCase();
-  if (code.length !== 4) {
-    showToast('Enter a 4-character room code');
-    return;
-  }
-  sendMsg({ type: 'joinRoom', name, code });
+  if (code.length !== 4) { showToast('Enter a 4-character room code'); return; }
+  sessionStorage.setItem('hs_name', myName);
+  sendMsg({ type: 'joinRoom', name: myName, code });
 });
 
-$('roomCodeInput').addEventListener('keyup', (e) => {
-  if (e.key === 'Enter') $('btnJoin').click();
-});
-
-$('btnStart').addEventListener('click', () => {
-  sendMsg({ type: 'startGame' });
-});
+$('roomCodeInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') $('btnJoin').click(); });
+$('btnStart').addEventListener('click', () => sendMsg({ type: 'startGame' }));
 
 $('btnSubmit').addEventListener('click', () => {
   const answer = getAnswer();
-  if (!answer) {
-    showToast('Enter your answer before submitting');
-    return;
-  }
+  if (!answer) { showToast('Enter your answer before submitting'); return; }
   sendMsg({ type: 'submit', answer });
   $('btnSubmit').disabled = true;
   $('btnSubmit').textContent = 'Submitted - Waiting...';
 });
 
-$('btnPlayAgain').addEventListener('click', () => {
-  sendMsg({ type: 'playAgain' });
-});
+$('btnPlayAgain').addEventListener('click', () => sendMsg({ type: 'playAgain' }));
 
 // ─── Init ───────────────────────────────────────────────────────────────────────
-
 connect();
 </script>
 </body>
