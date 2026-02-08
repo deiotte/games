@@ -6,5 +6,14 @@
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": ["game", "cooperative", "puzzle", "websocket", "multiplayer"]
+  "keywords": [
+    "game",
+    "cooperative",
+    "puzzle",
+    "websocket",
+    "multiplayer"
+  ],
+  "dependencies": {
+    "ws": "^8.19.0"
+  }
 }
