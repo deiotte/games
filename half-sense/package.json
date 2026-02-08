@@ -1,0 +1,10 @@
+{
+  "name": "half-sense",
+  "version": "1.0.0",
+  "description": "A collaborative puzzle game where each player has only half the information",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["game", "cooperative", "puzzle", "websocket", "multiplayer"]
+}
